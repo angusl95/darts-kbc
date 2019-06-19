@@ -10,8 +10,8 @@ import torch
 from torch import nn
 from torch import optim
 
-from kbc.models import KBCModel
-from kbc.regularizers import Regularizer
+from models import KBCModel
+from regularizers import Regularizer
 
 
 class KBCOptimizer(object):

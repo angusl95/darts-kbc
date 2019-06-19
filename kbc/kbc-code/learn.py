@@ -11,10 +11,10 @@ from typing import Dict
 import torch
 from torch import optim
 
-from kbc.datasets import Dataset
-from kbc.models import CP, ComplEx
-from kbc.regularizers import N2, N3
-from kbc.optimizers import KBCOptimizer
+from datasets import Dataset
+from models import CP, ComplEx
+from regularizers import N2, N3
+from optimizers import KBCOptimizer
 
 
 big_datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
