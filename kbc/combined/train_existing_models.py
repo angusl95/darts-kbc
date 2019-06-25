@@ -232,22 +232,54 @@ def main():
   cur_loss = 0
   curve = {'train': [], 'valid': [], 'test': []}
   for e in range(args.epochs):
-      cur_loss = optimizer.epoch(examples)
+    cur_loss = train_epoch(examples, model, optimizer, regularizer, args.batch_size)
 
-      if (e + 1) % args.valid == 0:
-          valid, test, train = [
-              avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
-              for split in ['valid', 'test', 'train']
-          ]
+    if (e + 1) % args.valid == 0:
+        valid, test, train = [
+            avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
+            for split in ['valid', 'test', 'train']
+        ]
 
-          curve['valid'].append(valid)
-          curve['test'].append(test)
-          curve['train'].append(train)
+        curve['valid'].append(valid)
+        curve['test'].append(test)
+        curve['train'].append(train)
 
-          print("\t TRAIN: ", train)
-          print("\t VALID : ", valid)
+        print("\t TRAIN: ", train)
+        print("\t VALID : ", valid)
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
+
+def train_epoch(self, examples: torch.LongTensor, model, optimizer: optim.Optimizer, 
+  regularizer: Regularizer, batch_size: int, verbose: bool = True):
+  actual_examples = examples[torch.randperm(examples.shape[0]), :]
+  loss = nn.CrossEntropyLoss(reduction='mean')
+  with tqdm.tqdm(total=examples.shape[0], unit='ex', disable=not verbose) as bar:
+      bar.set_description(f'train loss')
+      b_begin = 0
+      while b_begin < examples.shape[0]:
+          ##set current batch
+          input_batch = actual_examples[
+              b_begin:b_begin + batch_size
+          ].cuda()
+
+          #compute predictions, ground truth
+          predictions, factors = model.forward(input_batch)
+          truth = input_batch[:, 2]
+
+          #evaluate loss
+          l_fit = loss(predictions, truth)
+          l_reg = regularizer.forward(factors)
+          l = l_fit + l_reg
+
+          #optimise
+          optimizer.zero_grad()
+          l.backward()
+          optimizer.step()
+          b_begin += batch_size
+
+          #progress bar
+          bar.update(input_batch.shape[0])
+          bar.set_postfix(loss=f'{l.item():.0f}')  
 
 
 # def train(train_queue, model, criterion, optimizer):
