@@ -106,6 +106,7 @@ model.to(device)
 
 #check this
 CLASSES = dataset.get_shape()[0]
+
 print('num classes:', CLASSES)
 
 class CrossEntropyLabelSmooth(nn.Module):
