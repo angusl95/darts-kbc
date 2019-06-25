@@ -45,6 +45,7 @@ parser.add_argument('--gamma', type=float, default=0.97, help='learning rate dec
 parser.add_argument('--decay_period', type=int, default=1, help='epochs between two learning rate decays')
 parser.add_argument('--parallel', action='store_true', default=False, help='data parallelism')
 
+datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument(
     '--dataset', choices=datasets,
     help="Dataset in {}".format(datasets)
