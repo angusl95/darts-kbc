@@ -12,8 +12,6 @@ import argparse
 import torch.nn as nn
 import genotypes
 import torch.utils
-#import torchvision.datasets as dset
-#import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 from torch import optim
 from typing import Dict
@@ -173,40 +171,11 @@ def main():
     #weight_decay=args.weight_decay
     )
 
-  # traindir = os.path.join(args.data, 'train')
-  # validdir = os.path.join(args.data, 'val')
-  # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-  # train_data = dset.ImageFolder(
-  #   traindir,
-  #   transforms.Compose([
-  #     transforms.RandomResizedCrop(224),
-  #     transforms.RandomHorizontalFlip(),
-  #     transforms.ColorJitter(
-  #       brightness=0.4,
-  #       contrast=0.4,
-  #       saturation=0.4,
-  #       hue=0.2),
-  #     transforms.ToTensor(),
-  #     normalize,
-  #   ]))
-  # valid_data = dset.ImageFolder(
-  #   validdir,
-  #   transforms.Compose([
-  #     transforms.Resize(256),
-  #     transforms.CenterCrop(224),
-  #     transforms.ToTensor(),
-  #     normalize,
-  #   ]))
-
-  # train_queue = torch.utils.data.DataLoader(
-  #   train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=4)
-
-  # valid_queue = torch.utils.data.DataLoader(
-  #   valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=4)
-
   scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.decay_period, gamma=args.gamma)
 
   best_acc_top1 = 0
+  curve = {'train': [], 'valid': [], 'test': []}
+  
   for epoch in range(args.epochs):
     scheduler.step()
     logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
