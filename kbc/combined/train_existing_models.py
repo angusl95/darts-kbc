@@ -166,11 +166,11 @@ def main():
   criterion_smooth = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion_smooth = criterion_smooth.cuda()
 
-  optimizer = torch.optim.SGD(
+  optimizer = optim.SGD(
     model.parameters(),
     args.learning_rate,
-    momentum=args.momentum,
-    weight_decay=args.weight_decay
+    #momentum=args.momentum,
+    #weight_decay=args.weight_decay
     )
 
   # traindir = os.path.join(args.data, 'train')
