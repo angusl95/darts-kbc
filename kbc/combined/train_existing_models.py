@@ -18,7 +18,7 @@ from torch import optim
 from typing import Dict
 from datasets import Dataset
 from models import CP, ComplEx
-from regularizers import N2, N3
+from regularizers import N2, N3, Regularizer
 
 from torch.autograd import Variable
 from model import NetworkImageNet as Network
@@ -250,7 +250,7 @@ def main():
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
 
-def train_epoch(self, examples: torch.LongTensor, model, optimizer: optim.Optimizer, 
+def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
   actual_examples = examples[torch.randperm(examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
