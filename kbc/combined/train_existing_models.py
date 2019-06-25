@@ -207,49 +207,65 @@ def main():
   scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.decay_period, gamma=args.gamma)
 
   best_acc_top1 = 0
-  # for epoch in range(args.epochs):
-  #   scheduler.step()
-  #   logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
-  #   model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
+  for epoch in range(args.epochs):
+    scheduler.step()
+    logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
+    model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
 
-  #   train_acc, train_obj = train(train_queue, model, criterion_smooth, optimizer)
-  #   logging.info('train_acc %f', train_acc)
+    #train_acc, train_obj = train(train_queue, model, criterion_smooth, optimizer)
+    #logging.info('train_acc %f', train_acc)
 
-  #   valid_acc_top1, valid_acc_top5, valid_obj = infer(valid_queue, model, criterion)
-  #   logging.info('valid_acc_top1 %f', valid_acc_top1)
-  #   logging.info('valid_acc_top5 %f', valid_acc_top5)
-
-  #   is_best = False
-  #   if valid_acc_top1 > best_acc_top1:
-  #     best_acc_top1 = valid_acc_top1
-  #     is_best = True
-
-  #   utils.save_checkpoint({
-  #     'epoch': epoch + 1,
-  #     'state_dict': model.state_dict(),
-  #     'best_acc_top1': best_acc_top1,
-  #     'optimizer' : optimizer.state_dict(),
-  #     }, is_best, args.save)
-
-  cur_loss = 0
-  curve = {'train': [], 'valid': [], 'test': []}
-  for e in range(args.epochs):
     cur_loss = train_epoch(examples, model, optimizer, regularizer, args.batch_size)
 
-    if (e + 1) % args.valid == 0:
-        valid, test, train = [
+    #valid_acc_top1, valid_acc_top5, valid_obj = infer(valid_queue, model, criterion)
+    #logging.info('valid_acc_top1 %f', valid_acc_top1)
+    #logging.info('valid_acc_top5 %f', valid_acc_top5)
+
+    valid, test, train = [
             avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
             for split in ['valid', 'test', 'train']
         ]
 
-        curve['valid'].append(valid)
-        curve['test'].append(test)
-        curve['train'].append(train)
+    curve['valid'].append(valid)
+    curve['test'].append(test)
+    curve['train'].append(train)
 
-        print("\t TRAIN: ", train)
-        print("\t VALID : ", valid)
+    print("\t TRAIN: ", train)
+    print("\t VALID : ", valid)
+
+    is_best = False
+    if valid > best_acc:
+      best_acc = valid
+      is_best = True
+
+    utils.save_checkpoint({
+      'epoch': epoch + 1,
+      'state_dict': model.state_dict(),
+      'best_acc_top1': best_acc,
+      'optimizer' : optimizer.state_dict(),
+      }, is_best, args.save)
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
+
+  # cur_loss = 0
+  # curve = {'train': [], 'valid': [], 'test': []}
+  # for e in range(args.epochs):
+  #   cur_loss = train_epoch(examples, model, optimizer, regularizer, args.batch_size)
+
+  #   if (e + 1) % args.valid == 0:
+  #       valid, test, train = [
+  #           avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
+  #           for split in ['valid', 'test', 'train']
+  #       ]
+
+  #       curve['valid'].append(valid)
+  #       curve['test'].append(test)
+  #       curve['train'].append(train)
+
+  #       print("\t TRAIN: ", train)
+  #       print("\t VALID : ", valid)
+  # results = dataset.eval(model, 'test', -1)
+  # print("\n\nTEST : ", results)
 
 def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
