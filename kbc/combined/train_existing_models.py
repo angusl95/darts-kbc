@@ -157,7 +157,7 @@ def main():
   # else:
   #   model = model.cuda()
 
-  # logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
+  logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
   criterion = nn.CrossEntropyLoss()
   criterion = criterion.cuda()
@@ -203,8 +203,8 @@ def main():
     print("\t VALID : ", valid)
 
     is_best = False
-    if valid > best_acc:
-      best_acc = valid
+    if valid['MRR'] > best_acc:
+      best_acc = valid['MRR']
       is_best = True
 
     utils.save_checkpoint({
