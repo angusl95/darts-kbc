@@ -73,6 +73,19 @@ parser.add_argument(
     '--reg', default=0, type=float,
     help="Regularization weight"
 )
+optimizers = ['Adagrad', 'Adam', 'SGD']
+parser.add_argument(
+    '--optimizer', choices=optimizers, default='Adagrad',
+    help="Optimizer in {}".format(optimizers)
+)
+parser.add_argument(
+    '--decay1', default=0.9, type=float,
+    help="decay rate for the first moment estimate in Adam"
+)
+parser.add_argument(
+    '--decay2', default=0.999, type=float,
+    help="decay rate for second moment estimate in Adam"
+)
 
 
 args = parser.parse_args()
@@ -104,6 +117,12 @@ regularizer = {
 
 device = 'cuda'
 model.to(device)
+
+optimizer = {
+    'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
+    'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
+    'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
+}[args.optimizer]()
 
 #check this
 CLASSES = dataset.get_shape()[0]
@@ -164,12 +183,12 @@ def main():
   criterion_smooth = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion_smooth = criterion_smooth.cuda()
 
-  optimizer = optim.SGD(
-    model.parameters(),
-    args.learning_rate,
-    #momentum=args.momentum,
-    #weight_decay=args.weight_decay
-    )
+  # optimizer = optim.SGD(
+  #   model.parameters(),
+  #   args.learning_rate,
+  #   #momentum=args.momentum,
+  #   #weight_decay=args.weight_decay
+  #   )
 
   scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.decay_period, gamma=args.gamma)
 
