@@ -16,7 +16,7 @@ from models import KBCModel
 
 
 #DATA_PATH = Path(pkg_resources.resource_filename('kbc', 'data/'))
-DATA_PATH = Path('../data/')
+DATA_PATH = Path('../../data/')
 
 class Dataset(object):
     def __init__(self, name: str):
