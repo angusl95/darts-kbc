@@ -59,6 +59,7 @@ parser.add_argument(
 parser.add_argument(
     '--rank', default=1000, type=int,
     help="Factorization rank."
+)
 parser.add_argument(
     '--init', default=1e-3, type=float,
     help="Initial scale"
