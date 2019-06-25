@@ -50,11 +50,15 @@ parser.add_argument(
     '--dataset', choices=datasets,
     help="Dataset in {}".format(datasets)
 )
-
 models = ['CP', 'ComplEx']
 parser.add_argument(
     '--model', choices=models,
     help="Model in {}".format(models)
+)
+regularizers = ['N3', 'N2']
+parser.add_argument(
+    '--regularizer', choices=regularizers, default='N3',
+    help="Regularizer in {}".format(regularizers)
 )
 parser.add_argument(
     '--rank', default=1000, type=int,
