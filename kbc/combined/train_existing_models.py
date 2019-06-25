@@ -14,6 +14,7 @@ import torch.utils
 #import torchvision.datasets as dset
 #import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
+from torch import optim
 from typing import Dict
 from datasets import Dataset
 from models import CP, ComplEx
