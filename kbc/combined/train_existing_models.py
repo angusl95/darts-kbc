@@ -18,7 +18,7 @@ from torch import optim
 from typing import Dict
 from datasets import Dataset
 from models import CP, ComplEx
-from regularizers import N2, N3
+from regularizers import N2, N3, Regularizer
 
 from torch.autograd import Variable
 from model import NetworkImageNet as Network
