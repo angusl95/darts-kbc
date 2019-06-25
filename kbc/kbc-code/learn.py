@@ -61,7 +61,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--batch_size', default=1000, type=int,
-    help="Factorization rank."
+    help="Batch size."
 )
 parser.add_argument(
     '--reg', default=0, type=float,

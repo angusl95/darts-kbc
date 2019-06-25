@@ -56,6 +56,18 @@ parser.add_argument(
     '--model', choices=models,
     help="Model in {}".format(models)
 )
+parser.add_argument(
+    '--rank', default=1000, type=int,
+    help="Factorization rank."
+parser.add_argument(
+    '--init', default=1e-3, type=float,
+    help="Initial scale"
+)
+parser.add_argument(
+    '--reg', default=0, type=float,
+    help="Regularization weight"
+)
+
 
 args = parser.parse_args()
 
