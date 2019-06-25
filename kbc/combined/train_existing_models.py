@@ -11,8 +11,8 @@ import argparse
 import torch.nn as nn
 import genotypes
 import torch.utils
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
+#import torchvision.datasets as dset
+#import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 from datasets import Dataset
 from models import CP, ComplEx
