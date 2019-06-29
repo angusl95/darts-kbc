@@ -111,6 +111,15 @@ def main():
   logging.info('gpu device = %d' % args.gpu)
   logging.info("args = %s", args)
 
+  dataset = Dataset(args.dataset)
+  examples = torch.from_numpy(dataset.get_train().astype('int64'))
+
+  model = {
+      'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
+      'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
+      'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
+  }[args.model]()
+
   regularizer = {
     'N2': N2(args.reg),
     'N3': N3(args.reg),
