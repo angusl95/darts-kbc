@@ -123,6 +123,13 @@ def main():
   # device = 'cuda'
   # model.to(device)
 
+  CLASSES = dataset.get_shape()[0]
+
+  genotype = eval("genotypes.%s" % args.arch)
+  model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype,
+    dataset.get_shape(), args.rank, args.init)
+  model = model.cuda()
+
   regularizer = {
     'N2': N2(args.reg),
     'N3': N3(args.reg),
@@ -133,13 +140,6 @@ def main():
     'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
     'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
   }[args.optimizer]()
-
-  CLASSES = dataset.get_shape()[0]
-
-  genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype,
-    dataset.get_shape(), args.rank, args.init)
-  model = model.cuda()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
