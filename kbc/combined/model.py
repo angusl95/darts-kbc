@@ -210,11 +210,14 @@ class NetworkKBC(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
+    print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
 
     to_score = self.embeddings[0].weight
     s0 = s1 = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
+    print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
     for i, cell in enumerate(self.cells):
+      print('cell i, shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
     print('out shape', out.shape)
