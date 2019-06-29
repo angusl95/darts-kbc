@@ -124,55 +124,6 @@ class Cell(nn.Module):
       states += [s]
     return torch.cat([states[i] for i in self._concat], dim=1)
 
-
-class AuxiliaryHeadCIFAR(nn.Module):
-
-  def __init__(self, C, num_classes):
-    """assuming input size 8x8"""
-    super(AuxiliaryHeadCIFAR, self).__init__()
-    self.features = nn.Sequential(
-      nn.ReLU(inplace=True),
-      nn.AvgPool2d(5, stride=3, padding=0, count_include_pad=False), # image size = 2 x 2
-      nn.Conv2d(C, 128, 1, bias=False),
-      nn.BatchNorm2d(128),
-      nn.ReLU(inplace=True),
-      nn.Conv2d(128, 768, 2, bias=False),
-      nn.BatchNorm2d(768),
-      nn.ReLU(inplace=True)
-    )
-    self.classifier = nn.Linear(768, num_classes)
-
-  def forward(self, x):
-    x = self.features(x)
-    x = self.classifier(x.view(x.size(0),-1))
-    return x
-
-
-class AuxiliaryHeadImageNet(nn.Module):
-
-  def __init__(self, C, num_classes):
-    """assuming input size 14x14"""
-    super(AuxiliaryHeadImageNet, self).__init__()
-    self.features = nn.Sequential(
-      nn.ReLU(inplace=True),
-      nn.AvgPool2d(5, stride=2, padding=0, count_include_pad=False),
-      nn.Conv2d(C, 128, 1, bias=False),
-      nn.BatchNorm2d(128),
-      nn.ReLU(inplace=True),
-      nn.Conv2d(128, 768, 2, bias=False),
-      # NOTE: This batchnorm was omitted in my earlier implementation due to a typo.
-      # Commenting it out for consistency with the experiments in the paper.
-      # nn.BatchNorm2d(768),
-      nn.ReLU(inplace=True)
-    )
-    self.classifier = nn.Linear(768, num_classes)
-
-  def forward(self, x):
-    x = self.features(x)
-    x = self.classifier(x.view(x.size(0),-1))
-    return x
-
-
 class NetworkKBC(KBCModel):
 
   def __init__(self, C, num_classes, layers, auxiliary, genotype, 
@@ -224,8 +175,6 @@ class NetworkKBC(KBCModel):
     # self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.classifier = nn.Linear(C_prev, num_classes)
 
-    
-
     #old forward method
 
   # def forward(self, input):
@@ -243,13 +192,19 @@ class NetworkKBC(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    
-    f = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
-    f = (self.A @ f).squeeze()
-    f = torch.sum(
-        f * rhs, 1, keepdim=True
+    s0 = s1 = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
+
+    for i, cell in enumerate(self.cells):
+      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+    out = self.global_pooling(s1)
+    print('out shape', out.shape)
+
+    #logits = self.classifier(out.view(out.size(0),-1))
+    #f = (self.A @ f).squeeze()
+    out = torch.sum(
+        out * rhs, 1, keepdim=True
     )
-    return f
+    return out
 
   def forward(self, x):
     lhs = self.embeddings[0](x[:, 0])
@@ -257,12 +212,17 @@ class NetworkKBC(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
 
     to_score = self.embeddings[0].weight
-    
-    f = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
-    f = (self.A @ f).squeeze()
-    f = f @ to_score.transpose(0,1)
+    s0 = s1 = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
+
+    for i, cell in enumerate(self.cells):
+      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+    out = self.global_pooling(s1)
+    print('out shape', out.shape)
+
+    #f = (self.A @ f).squeeze()
+    out = out @ to_score.transpose(0,1)
     return (
-        f
+        out
     ), (
         lhs,rel,rhs
     )
@@ -382,4 +342,53 @@ class NetworkImageNet(nn.Module):
     out = self.global_pooling(s1)
     logits = self.classifier(out.view(out.size(0), -1))
     return logits, logits_aux
+
+
+class AuxiliaryHeadCIFAR(nn.Module):
+
+  def __init__(self, C, num_classes):
+    """assuming input size 8x8"""
+    super(AuxiliaryHeadCIFAR, self).__init__()
+    self.features = nn.Sequential(
+      nn.ReLU(inplace=True),
+      nn.AvgPool2d(5, stride=3, padding=0, count_include_pad=False), # image size = 2 x 2
+      nn.Conv2d(C, 128, 1, bias=False),
+      nn.BatchNorm2d(128),
+      nn.ReLU(inplace=True),
+      nn.Conv2d(128, 768, 2, bias=False),
+      nn.BatchNorm2d(768),
+      nn.ReLU(inplace=True)
+    )
+    self.classifier = nn.Linear(768, num_classes)
+
+  def forward(self, x):
+    x = self.features(x)
+    x = self.classifier(x.view(x.size(0),-1))
+    return x
+
+
+class AuxiliaryHeadImageNet(nn.Module):
+
+  def __init__(self, C, num_classes):
+    """assuming input size 14x14"""
+    super(AuxiliaryHeadImageNet, self).__init__()
+    self.features = nn.Sequential(
+      nn.ReLU(inplace=True),
+      nn.AvgPool2d(5, stride=2, padding=0, count_include_pad=False),
+      nn.Conv2d(C, 128, 1, bias=False),
+      nn.BatchNorm2d(128),
+      nn.ReLU(inplace=True),
+      nn.Conv2d(128, 768, 2, bias=False),
+      # NOTE: This batchnorm was omitted in my earlier implementation due to a typo.
+      # Commenting it out for consistency with the experiments in the paper.
+      # nn.BatchNorm2d(768),
+      nn.ReLU(inplace=True)
+    )
+    self.classifier = nn.Linear(768, num_classes)
+
+  def forward(self, x):
+    x = self.features(x)
+    x = self.classifier(x.view(x.size(0),-1))
+    return x
+
 
