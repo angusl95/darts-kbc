@@ -111,9 +111,12 @@ print(dataset.get_shape())
 #     'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
 #     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
 # }[args.model]()
+<<<<<<< HEAD
 
 # device = 'cuda'
 # model.to(device)
+=======
+>>>>>>> 1ddd9ec25317adccd81c1067569f457a62d1ce99
 
 regularizer = {
     'N2': N2(args.reg),
