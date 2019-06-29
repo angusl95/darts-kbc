@@ -95,9 +95,6 @@ fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
-CIFAR_CLASSES = 10
-
-
 def main():
   if not torch.cuda.is_available():
     logging.info('no gpu device available')
@@ -121,8 +118,10 @@ def main():
   #     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
   # }[args.model]()
 
-  device = 'cuda'
-  model.to(device)
+  #TODO: does below need reintroducing somewhere?
+
+  # device = 'cuda'
+  # model.to(device)
 
   regularizer = {
     'N2': N2(args.reg),
