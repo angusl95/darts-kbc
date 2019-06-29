@@ -114,11 +114,12 @@ print(dataset.get_shape())
 
 # device = 'cuda'
 # model.to(device)
-
-
-# device = 'cuda'
-# model.to(device)
-
+genotype = eval("genotypes.%s" % args.arch)
+  model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
+  if args.parallel:
+    model = nn.DataParallel(model).cuda()
+  else:
+    model = model.cuda()
 
 regularizer = {
     'N2': N2(args.reg),
@@ -175,13 +176,6 @@ def main():
   torch.cuda.manual_seed(args.seed)
   logging.info('gpu device = %d' % args.gpu)
   logging.info("args = %s", args)
-
-  genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
-  if args.parallel:
-    model = nn.DataParallel(model).cuda()
-  else:
-    model = model.cuda()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
