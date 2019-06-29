@@ -20,7 +20,7 @@ from models import CP, ComplEx
 from regularizers import N2, N3, Regularizer
 
 from torch.autograd import Variable
-from model import NetworkImageNet as Network
+from model_search import Network
 
 
 parser = argparse.ArgumentParser("imagenet")
@@ -104,26 +104,24 @@ logging.getLogger().addHandler(fh)
 dataset = Dataset(args.dataset)
 examples = torch.from_numpy(dataset.get_train().astype('int64'))
 
-print('dataset shape')
-print(dataset.get_shape())
-# model = {
-#     'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
-#     'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
-#     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
-# }[args.model]()
+model = {
+    'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
+    'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
+    'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
+}[args.model]()
 
-# device = 'cuda'
-# model.to(device)
-genotype = eval("genotypes.%s" % args.arch)
+device = 'cuda'
+model.to(device)
+# genotype = eval("genotypes.%s" % args.arch)
 
-#check this
-CLASSES = dataset.get_shape()[0]
+# #check this
+# CLASSES = dataset.get_shape()[0]
 
-model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
-if args.parallel:
-  model = nn.DataParallel(model).cuda()
-else:
-  model = model.cuda()
+# model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
+# if args.parallel:
+#   model = nn.DataParallel(model).cuda()
+# else:
+#   model = model.cuda()
 
 regularizer = {
     'N2': N2(args.reg),
