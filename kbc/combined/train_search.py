@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import glob
+import tqdm
 import numpy as np
 import torch
 import utils
@@ -41,6 +42,47 @@ parser.add_argument('--train_portion', type=float, default=0.5, help='portion of
 parser.add_argument('--unrolled', action='store_true', default=False, help='use one-step unrolled validation loss')
 parser.add_argument('--arch_learning_rate', type=float, default=3e-4, help='learning rate for arch encoding')
 parser.add_argument('--arch_weight_decay', type=float, default=1e-3, help='weight decay for arch encoding')
+
+datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
+parser.add_argument(
+    '--dataset', choices=datasets,
+    help="Dataset in {}".format(datasets)
+)
+models = ['CP', 'ComplEx']
+parser.add_argument(
+    '--model', choices=models,
+    help="Model in {}".format(models)
+)
+regularizers = ['N3', 'N2']
+parser.add_argument(
+    '--regularizer', choices=regularizers, default='N3',
+    help="Regularizer in {}".format(regularizers)
+)
+parser.add_argument(
+    '--rank', default=1000, type=int,
+    help="Factorization rank."
+)
+parser.add_argument(
+    '--init', default=1e-3, type=float,
+    help="Initial scale"
+)
+parser.add_argument(
+    '--reg', default=0, type=float,
+    help="Regularization weight"
+)
+optimizers = ['Adagrad', 'Adam', 'SGD']
+parser.add_argument(
+    '--optimizer', choices=optimizers, default='Adagrad',
+    help="Optimizer in {}".format(optimizers)
+)
+parser.add_argument(
+    '--decay1', default=0.9, type=float,
+    help="decay rate for the first moment estimate in Adam"
+)
+parser.add_argument(
+    '--decay2', default=0.999, type=float,
+    help="decay rate for second moment estimate in Adam"
+)
 args = parser.parse_args()
 
 args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
