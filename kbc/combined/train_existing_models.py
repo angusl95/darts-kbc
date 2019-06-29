@@ -115,6 +115,11 @@ print(dataset.get_shape())
 # device = 'cuda'
 # model.to(device)
 
+
+# device = 'cuda'
+# model.to(device)
+
+
 regularizer = {
     'N2': N2(args.reg),
     'N3': N3(args.reg),
