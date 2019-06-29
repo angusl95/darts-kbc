@@ -269,7 +269,16 @@ def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer,
           #progress bar
           bar.update(input_batch.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
-
+def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
+    """
+    aggregate metrics for missing lhs and rhs
+    :param mrrs: d
+    :param hits:
+    :return:
+    """
+    m = (mrrs['lhs'] + mrrs['rhs']) / 2.
+    h = (hits['lhs'] + hits['rhs']) / 2.
+    return {'MRR': m, 'hits@[1,3,10]': h}
 
 # def infer(valid_queue, model, criterion):
 #   objs = utils.AvgrageMeter()
