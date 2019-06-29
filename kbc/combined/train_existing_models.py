@@ -115,6 +115,9 @@ print(dataset.get_shape())
 # device = 'cuda'
 # model.to(device)
 genotype = eval("genotypes.%s" % args.arch)
+#check this
+CLASSES = dataset.get_shape()[0]
+
 model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
 if args.parallel:
   model = nn.DataParallel(model).cuda()
@@ -131,9 +134,6 @@ optimizer = {
     'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
     'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
 }[args.optimizer]()
-
-#check this
-CLASSES = dataset.get_shape()[0]
 
 print('num classes:', CLASSES)
 
