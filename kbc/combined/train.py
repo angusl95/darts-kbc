@@ -3,6 +3,7 @@ import sys
 import time
 import glob
 import numpy as np
+import tqdm
 import torch
 import utils
 import logging
