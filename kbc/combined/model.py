@@ -206,15 +206,15 @@ class NetworkKBC(KBCModel):
     C_prev_prev, C_prev, C_curr = C, C, C
 
     self.cells = nn.ModuleList()
-    # reduction_prev = False
+    reduction_prev = False
     for i in range(layers):
-    #   if i in [layers//3, 2*layers//3]:
-    #     C_curr *= 2
-    #     reduction = True
-    #   else:
-    #     reduction = False
+      if i in [layers//3, 2*layers//3]:
+        C_curr *= 2
+        reduction = True
+      else:
+        reduction = False
       cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
-      # reduction_prev = reduction
+      reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
       # if i == 2*layers//3:
