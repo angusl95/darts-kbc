@@ -163,6 +163,8 @@ def main():
   #     valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
+  best_acc = 0
+  curve = {'train': [], 'valid': [], 'test': []}
 
   for epoch in range(args.epochs):
     scheduler.step()
