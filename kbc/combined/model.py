@@ -70,8 +70,7 @@ class KBCModel(nn.Module, ABC):
         return ranks
 
 
-#class Cell(nn.Module):
-class Cell(KBCModel):
+class Cell(nn.Module):
 
   def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
