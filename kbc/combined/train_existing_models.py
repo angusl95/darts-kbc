@@ -115,6 +115,7 @@ print(dataset.get_shape())
 # device = 'cuda'
 # model.to(device)
 genotype = eval("genotypes.%s" % args.arch)
+
 model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
 if args.parallel:
   model = nn.DataParallel(model).cuda()
