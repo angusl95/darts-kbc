@@ -121,6 +121,9 @@ def main():
       'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
   }[args.model]()
 
+  device = 'cuda'
+  model.to(device)
+
   regularizer = {
     'N2': N2(args.reg),
     'N3': N3(args.reg),
