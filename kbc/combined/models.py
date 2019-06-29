@@ -180,3 +180,80 @@ class ComplEx(KBCModel):
             lhs[0] * rel[0] - lhs[1] * rel[1],
             lhs[0] * rel[1] + lhs[1] * rel[0]
         ], 1)
+
+class MLP(KBCModel):
+    def __init__(
+          self, sizes: Tuple[int, int, int], rank: int,
+          hidden_size: int, init_size: float = 1e-3
+    ):
+      
+      super(MLP, self).__init__()
+      self.sizes = sizes
+      print(self.sizes)
+      self.rank = rank
+      self.hidden_size = hidden_size
+      self.num_relations = self.sizes[1]
+
+      self.embeddings = nn.ModuleList([
+          nn.Embedding(s, rank, sparse=True)
+          for s in sizes[:2]
+      ])
+      self.embeddings[0].weight.data *= init_size
+      self.embeddings[1].weight.data *= init_size
+      
+      #first dimension indexes relations
+      self.A = torch.randn(self.num_relations, self.hidden_size, 2*self.rank).cuda()
+      self.w = torch.randn(self.num_relations, self.hidden_size, 1).cuda()
+      
+    def score(self, x):
+        lhs = self.embeddings[0](x[:, 0])
+        #rel = self.embeddings[1](x[:, 1])
+        rel = x[:,1]
+        rhs = self.embeddings[0](x[:, 2])
+        phi = torch.cat([lhs,rhs],1).view([x.size()[0],-1,1])
+        h = torch.matmul(self.A[rel,:,:], phi)
+        h = F.relu(h)
+        f = self.w[rel,:,:].transpose(1,2) @ h
+        f = f.squeeze()
+        
+        return f
+
+    def forward(self, x):
+        lhs = self.embeddings[0](x[:, 0])
+        #rel = self.embeddings[1](x[:, 1])
+        rel = x[:,1]
+        rhs = self.embeddings[0](x[:, 2])
+        
+        to_score = self.embeddings[0].weight
+        print('to_score shape')
+        print(to_score.shape)        
+        #TODO repeat or expand?
+        lhs = lhs.expand(100,1000,self.sizes[0])
+        print('repeated lhs shape')
+        print(lhs.shape)
+
+        phi = torch.cat([lhs,rhs],1).view([x.size()[0],-1,1])
+        h = torch.matmul(self.A[rel,:,:], phi)
+        h = F.relu(h)
+        f = self.w[rel,:,:].transpose(1,2) @ h
+        f = f.squeeze()
+        
+        to_score = self.embeddings[0].weight
+        return (
+            f
+        ), (
+            torch.abs(lhs),
+            torch.abs(rel),
+            torch.abs(rhs)
+        )
+
+    def get_rhs(self, chunk_begin: int, chunk_size: int):
+        return self.embeddings[0].weight.data[
+            chunk_begin:chunk_begin + chunk_size
+        ].transpose(0, 1)
+
+    def get_queries(self, queries: torch.Tensor):
+        lhs = self.embeddings[0](queries[:, 0])
+        rel = self.embeddings[1](queries[:, 1])
+
+        return lhs * rel

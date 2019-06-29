@@ -86,9 +86,10 @@ parser.add_argument(
     '--decay2', default=0.999, type=float,
     help="decay rate for second moment estimate in Adam"
 )
-
-
 args = parser.parse_args()
+
+#TODO: remove weight decay to reproduce Facebook benchmarks?
+
 
 args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
@@ -105,18 +106,19 @@ examples = torch.from_numpy(dataset.get_train().astype('int64'))
 
 print('dataset shape')
 print(dataset.get_shape())
-model = {
-    'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
-    'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
-}[args.model]()
+# model = {
+#     'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
+#     'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
+#     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
+# }[args.model]()
+
+# device = 'cuda'
+# model.to(device)
 
 regularizer = {
     'N2': N2(args.reg),
     'N3': N3(args.reg),
 }[args.regularizer]
-
-device = 'cuda'
-model.to(device)
 
 optimizer = {
     'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
@@ -169,12 +171,12 @@ def main():
   logging.info('gpu device = %d' % args.gpu)
   logging.info("args = %s", args)
 
-  # genotype = eval("genotypes.%s" % args.arch)
-  # #model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
-  # if args.parallel:
-  #   model = nn.DataParallel(model).cuda()
-  # else:
-  #   model = model.cuda()
+  genotype = eval("genotypes.%s" % args.arch)
+  model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
+  if args.parallel:
+    model = nn.DataParallel(model).cuda()
+  else:
+    model = model.cuda()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
