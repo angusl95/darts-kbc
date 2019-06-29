@@ -158,7 +158,7 @@ def main():
   # valid_queue = torch.utils.data.DataLoader(
   #     valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
 
-  # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
+  scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
 
   for epoch in range(args.epochs):
     scheduler.step()
