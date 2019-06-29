@@ -115,11 +115,9 @@ print(dataset.get_shape())
 # device = 'cuda'
 # model.to(device)
 genotype = eval("genotypes.%s" % args.arch)
-<<<<<<< HEAD
+
 #check this
 CLASSES = dataset.get_shape()[0]
-=======
->>>>>>> bb8fbfd3837b9a1ec2680b958dd7fbeeff913254
 
 model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
 if args.parallel:
@@ -206,7 +204,8 @@ def main():
 
     #train_acc, train_obj = train(train_queue, model, criterion_smooth, optimizer)
     #logging.info('train_acc %f', train_acc)
-
+    print('examples shape')
+    print(examples.shape)
     cur_loss = train_epoch(examples, model, optimizer, regularizer, args.batch_size)
 
     #valid_acc_top1, valid_acc_top5, valid_obj = infer(valid_queue, model, criterion)
