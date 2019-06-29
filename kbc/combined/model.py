@@ -1,11 +1,77 @@
 import torch
 import torch.nn as nn
+from abc import ABC, abstractmethod
+from typing import Tuple, List, Dict
 from operations import *
 from torch.autograd import Variable
 from utils import drop_path
 
+class KBCModel(nn.Module, ABC):
+    @abstractmethod
+    def get_rhs(self, chunk_begin: int, chunk_size: int):
+        pass
 
-class Cell(nn.Module):
+    @abstractmethod
+    def get_queries(self, queries: torch.Tensor):
+        pass
+
+    @abstractmethod
+    def score(self, x: torch.Tensor):
+        pass
+
+    def get_ranking(
+            self, queries: torch.Tensor,
+            filters: Dict[Tuple[int, int], List[int]],
+            batch_size: int = 1000, chunk_size: int = -1
+    ):
+        """
+        Returns filtered ranking for each queries.
+        :param queries: a torch.LongTensor of triples (lhs, rel, rhs)
+        :param filters: filters[(lhs, rel)] gives the rhs to filter from ranking
+        :param batch_size: maximum number of queries processed at once
+        :param chunk_size: maximum number of candidates processed at once
+        :return:
+        """
+        if chunk_size < 0:
+            chunk_size = self.sizes[2]
+        ranks = torch.ones(len(queries))
+        with torch.no_grad():
+            c_begin = 0
+            while c_begin < self.sizes[2]:
+                b_begin = 0
+                rhs = self.get_rhs(c_begin, chunk_size)
+                while b_begin < len(queries):
+                    these_queries = queries[b_begin:b_begin + batch_size]
+                    q = self.get_queries(these_queries)
+
+                    scores = q @ rhs
+                    targets = self.score(these_queries)
+
+                    # set filtered and true scores to -1e6 to be ignored
+                    # take care that scores are chunked
+                    for i, query in enumerate(these_queries):
+                        filter_out = filters[(query[0].item(), query[1].item())]
+                        filter_out += [queries[b_begin + i, 2].item()]
+                        if chunk_size < self.sizes[2]:
+                            filter_in_chunk = [
+                                int(x - c_begin) for x in filter_out
+                                if c_begin <= x < c_begin + chunk_size
+                            ]
+                            scores[i, torch.LongTensor(filter_in_chunk)] = -1e6
+                        else:
+                            scores[i, torch.LongTensor(filter_out)] = -1e6
+                    ranks[b_begin:b_begin + batch_size] += torch.sum(
+                        (scores > targets).float(), dim=1
+                    ).cpu()
+
+                    b_begin += batch_size
+
+                c_begin += chunk_size
+        return ranks
+
+
+#class Cell(nn.Module):
+class Cell(KBCModel):
 
   def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
@@ -106,6 +172,112 @@ class AuxiliaryHeadImageNet(nn.Module):
     x = self.features(x)
     x = self.classifier(x.view(x.size(0),-1))
     return x
+
+
+class NetworkKBC(KBCModel):
+
+  def __init__(self, C, num_classes, layers, auxiliary, genotype, 
+    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3):
+
+    super(NetworkKBC, self).__init__()
+
+    self.sizes = sizes
+    self.rank = rank
+
+    self.embeddings = nn.ModuleList([
+            nn.Embedding(s, rank, sparse=True)
+            for s in sizes[:2]
+        ])
+    self.embeddings[0].weight.data *= init_size
+    self.embeddings[1].weight.data *= init_size
+
+    self._layers = layers
+    self._auxiliary = auxiliary
+    self.A = torch.randn(self.rank, 2*self.rank).cuda()
+
+    # stem_multiplier = 3
+    # C_curr = stem_multiplier*C
+    # self.stem = nn.Sequential(
+    #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
+    #   nn.BatchNorm2d(C_curr)
+    # )
+
+    #C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
+    C_prev_prev, C_prev, C_curr = C, C, C
+
+    self.cells = nn.ModuleList()
+    # reduction_prev = False
+    for i in range(layers):
+    #   if i in [layers//3, 2*layers//3]:
+    #     C_curr *= 2
+    #     reduction = True
+    #   else:
+    #     reduction = False
+      cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
+      # reduction_prev = reduction
+      self.cells += [cell]
+      C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
+      # if i == 2*layers//3:
+      #   C_to_auxiliary = C_prev
+
+    # if auxiliary:
+    #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
+    # self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.classifier = nn.Linear(C_prev, num_classes)
+
+    
+
+    #old forward method
+
+  # def forward(self, input):
+  #   logits_aux = None
+  #   s0 = s1 = self.stem(input)
+  #   for i, cell in enumerate(self.cells):
+  #     s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+  #     if i == 2*self._layers//3:
+  #       if self._auxiliary and self.training:
+  #         logits_aux = self.auxiliary_head(s1)
+  #   out = self.global_pooling(s1)
+  #   logits = self.classifier(out.view(out.size(0),-1))
+  #   return logits, logits_aux
+  def score(self, x):
+    lhs = self.embeddings[0](x[:, 0])
+    rel = self.embeddings[1](x[:, 1])
+    rhs = self.embeddings[0](x[:, 2])
+    
+    f = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
+    f = (self.A @ f).squeeze()
+    f = torch.sum(
+        f * rhs, 1, keepdim=True
+    )
+    return f
+
+  def forward(self, x):
+    lhs = self.embeddings[0](x[:, 0])
+    rel = self.embeddings[1](x[:, 1])
+    rhs = self.embeddings[0](x[:, 2])
+
+    to_score = self.embeddings[0].weight
+    
+    f = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
+    f = (self.A @ f).squeeze()
+    f = f @ to_score.transpose(0,1)
+    return (
+        f
+    ), (
+        lhs,rel,rhs
+    )
+
+  def get_rhs(self, chunk_begin: int, chunk_size: int):
+    return self.embeddings[0].weight.data[
+        chunk_begin:chunk_begin + chunk_size
+    ].transpose(0, 1)
+
+  def get_queries(self, queries: torch.Tensor):
+    lhs = self.embeddings[0](queries[:, 0])
+    rel = self.embeddings[1](queries[:, 1])
+
+    return lhs * rel
 
 
 class NetworkCIFAR(nn.Module):

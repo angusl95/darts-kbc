@@ -18,7 +18,7 @@ from datasets import Dataset
 from models import CP, ComplEx
 from regularizers import N2, N3, Regularizer
 from torch.autograd import Variable
-from model import NetworkCIFAR as Network
+from model import NetworkKBC as Network
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -115,11 +115,11 @@ def main():
   dataset = Dataset(args.dataset)
   examples = torch.from_numpy(dataset.get_train().astype('int64'))
 
-  model = {
-      'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
-      'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
-      'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
-  }[args.model]()
+  # model = {
+  #     'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
+  #     'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
+  #     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
+  # }[args.model]()
 
   device = 'cuda'
   model.to(device)
@@ -137,9 +137,10 @@ def main():
 
   CLASSES = dataset.get_shape()[0]
 
-  # genotype = eval("genotypes.%s" % args.arch)
-  # model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
-  # model = model.cuda()
+  genotype = eval("genotypes.%s" % args.arch)
+  model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype,
+    dataset.get_shape(), args.rank, args.init)
+  model = model.cuda()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 

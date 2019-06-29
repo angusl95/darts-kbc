@@ -110,18 +110,19 @@ model = {
     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
 }[args.model]()
 
-device = 'cuda'
-model.to(device)
-# genotype = eval("genotypes.%s" % args.arch)
+# device = 'cuda'
+# model.to(device)
 
-# #check this
-# CLASSES = dataset.get_shape()[0]
+#genotype = eval("genotypes.%s" % args.arch)
 
-# model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
-# if args.parallel:
-#   model = nn.DataParallel(model).cuda()
-# else:
-#   model = model.cuda()
+#check this
+CLASSES = dataset.get_shape()[0]
+
+model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
+if args.parallel:
+  model = nn.DataParallel(model).cuda()
+else:
+  model = model.cuda()
 
 regularizer = {
     'N2': N2(args.reg),
