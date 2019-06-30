@@ -213,7 +213,7 @@ class NetworkKBC(KBCModel):
     print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
 
     to_score = self.embeddings[0].weight
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 10, (self.rank * 2)//30,])
+    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 32, (self.rank * 2)//32,])
     s0 = s1 = self.stem(input)
     print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
