@@ -40,6 +40,8 @@ class Dataset(object):
         return self.data[split]
 
     def get_train(self):
+        #swap all relations in training set and add n_predicates to get index of
+        #inverse relation?
         copy = np.copy(self.data['train'])
         tmp = np.copy(copy[:, 0])
         copy[:, 0] = copy[:, 2]
