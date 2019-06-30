@@ -104,8 +104,8 @@ class Cell(nn.Module):
     self._indices = indices
 
   def forward(self, s0, s1, drop_prob):
-    #s0 = self.preprocess0(s0)
-    #s1 = self.preprocess1(s1)
+    s0 = self.preprocess0(s0)
+    s1 = self.preprocess1(s1)
 
     states = [s0, s1]
     for i in range(self._steps):
@@ -154,7 +154,6 @@ class NetworkKBC(KBCModel):
 
     C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
     #C_prev_prev, C_prev, C_curr = C, C, C
-
     self.cells = nn.ModuleList()
     reduction_prev = False
     for i in range(layers):
