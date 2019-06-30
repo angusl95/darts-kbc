@@ -143,17 +143,17 @@ class NetworkKBC(KBCModel):
 
     self._layers = layers
     self._auxiliary = auxiliary
-    self.A = torch.randn(self.rank, 2*self.rank).cuda()
+    #self.A = torch.randn(self.rank, 2*self.rank).cuda()
 
-    # stem_multiplier = 3
-    # C_curr = stem_multiplier*C
-    # self.stem = nn.Sequential(
-    #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
-    #   nn.BatchNorm2d(C_curr)
-    # )
+    stem_multiplier = 3
+    C_curr = stem_multiplier*C
+    self.stem = nn.Sequential(
+      nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
+      nn.BatchNorm2d(C_curr)
+    )
 
-    #C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
-    C_prev_prev, C_prev, C_curr = C, C, C
+    C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
+    #C_prev_prev, C_prev, C_curr = C, C, C
 
     self.cells = nn.ModuleList()
     reduction_prev = False
@@ -172,7 +172,8 @@ class NetworkKBC(KBCModel):
 
     # if auxiliary:
     #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
-    # self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.projection = nn.Linear(C_prev, self.rank)
     self.classifier = nn.Linear(C_prev, num_classes)
 
     #old forward method
@@ -192,13 +193,13 @@ class NetworkKBC(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    s0 = s1 = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
-
+    input = torch.cat([lhs, rel], 1).view([-1, 2*self.rank, 1])
+    s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
     print('out shape', out.shape)
-
+    out = self.projection(out.view(out.size(0),-1))
     #logits = self.classifier(out.view(out.size(0),-1))
     #f = (self.A @ f).squeeze()
     out = torch.sum(
@@ -213,15 +214,16 @@ class NetworkKBC(KBCModel):
     print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
 
     to_score = self.embeddings[0].weight
-    s0 = s1 = torch.cat([lhs, rel], 1).view([lhs.size(0), 1, 10, (self.rank * 2)//10,])
+    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 10, (self.rank * 2)//30,])
+    s0 = s1 = self.stem(input)
     print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
     for i, cell in enumerate(self.cells):
       print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
-    print('out shape', out.shape)
-
+    print('out shape after global pooling', out.shape)
+    out = self.projection(out.view(out.size(0),-1))
     #f = (self.A @ f).squeeze()
     out = out @ to_score.transpose(0,1)
     return (
