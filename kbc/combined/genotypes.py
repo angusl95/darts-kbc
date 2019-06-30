@@ -105,7 +105,8 @@ KBCNet = Genotype(
     #('linear', 0),
     #('linear', 1),
     ],
-  normal_concat = [4, 5, 6],
+  #normal_concat = [4, 5, 6],
+  normal_concat = [2,3],
   reduce = [
     ('avg_pool_3x3', 0),
     ('sep_conv_3x3', 1),
