@@ -217,7 +217,7 @@ class NetworkKBC(KBCModel):
     print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
     for i, cell in enumerate(self.cells):
-      print('cell i, shapes of s0 and s1:', s0.shape, s1.shape)
+      print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
     print('out shape', out.shape)
