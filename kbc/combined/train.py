@@ -178,8 +178,8 @@ def main():
     #valid_acc, valid_obj = infer(valid_queue, model, criterion)
     #logging.info('valid_acc %f', valid_acc)
 
-    print('examples shape')
-    print(examples.shape)
+    #print('examples shape')
+    #print(examples.shape)
     train_epoch(examples, model, optimizer, regularizer, args.batch_size)
     valid, test, train = [
             avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))

@@ -74,7 +74,7 @@ class Cell(nn.Module):
 
   def __init__(self, genotype, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
-    print(C_prev_prev, C_prev, C)
+    #print(C_prev_prev, C_prev, C)
 
     if reduction_prev:
       self.preprocess0 = FactorizedReduce(C_prev_prev, C)
@@ -197,7 +197,7 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
-    print('out shape', out.shape)
+    #print('out shape', out.shape)
     out = self.projection(out.view(out.size(0),-1))
     #logits = self.classifier(out.view(out.size(0),-1))
     #f = (self.A @ f).squeeze()
@@ -210,18 +210,18 @@ class NetworkKBC(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
+    #print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
 
     to_score = self.embeddings[0].weight
     input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = self.stem(input)
-    print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
     for i, cell in enumerate(self.cells):
-      print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
+      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
-    print('out shape after global pooling', out.shape)
+    #print('out shape after global pooling', out.shape)
     out = self.projection(out.view(out.size(0),-1))
     #f = (self.A @ f).squeeze()
     out = out @ to_score.transpose(0,1)
