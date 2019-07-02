@@ -14,6 +14,10 @@ import torch.nn.functional as F
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
 
+from torch import optim
+from typing import Dict
+from datasets import Dataset
+from regularizers import N2, N3, Regularizer
 from torch.autograd import Variable
 from model_search import Network
 from architect import Architect
@@ -48,11 +52,11 @@ parser.add_argument(
     '--dataset', choices=datasets,
     help="Dataset in {}".format(datasets)
 )
-models = ['CP', 'ComplEx']
-parser.add_argument(
-    '--model', choices=models,
-    help="Model in {}".format(models)
-)
+# models = ['CP', 'ComplEx']
+# parser.add_argument(
+#     '--model', choices=models,
+#     help="Model in {}".format(models)
+# )
 regularizers = ['N3', 'N2']
 parser.add_argument(
     '--regularizer', choices=regularizers, default='N3',
@@ -96,8 +100,6 @@ fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
 
-CIFAR_CLASSES = 10
-
 
 def main():
   if not torch.cuda.is_available():
@@ -113,9 +115,14 @@ def main():
   logging.info('gpu device = %d' % args.gpu)
   logging.info("args = %s", args)
 
+  dataset = Dataset(args.dataset)
+  examples = torch.from_numpy(dataset.get_train().astype('int64'))
+
+  CLASSES = dataset.get_shape()[0]
+
   criterion = nn.CrossEntropyLoss()
   criterion = criterion.cuda()
-  model = Network(args.init_channels, CIFAR_CLASSES, args.layers, criterion)
+  model = Network(args.init_channels, CLASSES, args.layers, criterion)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 

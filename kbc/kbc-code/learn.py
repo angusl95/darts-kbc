@@ -46,7 +46,6 @@ parser.add_argument(
     '--optimizer', choices=optimizers, default='Adagrad',
     help="Optimizer in {}".format(optimizers)
 )
-
 parser.add_argument(
     '--max_epochs', default=50, type=int,
     help="Number of epochs."

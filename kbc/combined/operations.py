@@ -17,7 +17,8 @@ OPS = {
     nn.Conv2d(C, C, (7,1), stride=(stride, 1), padding=(3, 0), bias=False),
     nn.BatchNorm2d(C, affine=affine)
     ),
-  'linear' : lambda C, stride, affine: nn.Linear(C, C)
+  'linear' : lambda C, stride, affine: nn.Linear(C, C),
+  'identity' : lambda C, stride, affine: Identity()
 }
 
 class ReLUConvBN(nn.Module):

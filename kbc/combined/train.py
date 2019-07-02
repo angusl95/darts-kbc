@@ -48,11 +48,11 @@ parser.add_argument(
     '--dataset', choices=datasets,
     help="Dataset in {}".format(datasets)
 )
-models = ['CP', 'ComplEx']
-parser.add_argument(
-    '--model', choices=models,
-    help="Model in {}".format(models)
-)
+# models = ['CP', 'ComplEx']
+# parser.add_argument(
+#     '--model', choices=models,
+#     help="Model in {}".format(models)
+# )
 regularizers = ['N3', 'N2']
 parser.add_argument(
     '--regularizer', choices=regularizers, default='N3',
@@ -126,7 +126,7 @@ def main():
   CLASSES = dataset.get_shape()[0]
 
   genotype = eval("genotypes.%s" % args.arch)
-  model = Network(2* args.rank, #args.init_channels, 
+  model = Network(args.init_channels, 
     CLASSES, args.layers, args.auxiliary, genotype,
     dataset.get_shape(), args.rank, args.init)
   model = model.cuda()
