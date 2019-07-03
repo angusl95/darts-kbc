@@ -126,7 +126,7 @@ def main():
   CLASSES = dataset.get_shape()[0]
 
   genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels, 
+  model = Network(args.init_channels, #was formerly 2*rank?
     CLASSES, args.layers, args.auxiliary, genotype,
     dataset.get_shape(), args.rank, args.init)
   model = model.cuda()
@@ -272,6 +272,7 @@ def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer,
           #progress bar
           bar.update(input_batch.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
+          
 def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     """
     aggregate metrics for missing lhs and rhs

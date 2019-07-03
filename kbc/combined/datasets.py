@@ -47,6 +47,14 @@ class Dataset(object):
         copy[:, 1] += self.n_predicates // 2  # has been multiplied by two.
         return np.vstack((self.data['train'], copy))
 
+    def get_valid(self):
+        copy = np.copy(self.data['valid'])
+        tmp = np.copy(copy[:, 0])
+        copy[:, 0] = copy[:, 2]
+        copy[:, 2] = tmp
+        copy[:, 1] += self.n_predicates // 2  # has been multiplied by two.
+        return np.vstack((self.data['valid'], copy))
+
     def eval(
             self, model: KBCModel, split: str, n_queries: int = -1, missing_eval: str = 'both',
             at: Tuple[int] = (1, 3, 10)

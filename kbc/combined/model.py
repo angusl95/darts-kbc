@@ -242,8 +242,18 @@ class NetworkKBC(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
+    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    s0 = s1 = self.stem(input)
+    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
-    return lhs * rel
+    for i, cell in enumerate(self.cells):
+      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
+      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+    out = self.global_pooling(s1)
+    #print('out shape after global pooling', out.shape)
+    out = self.projection(out.view(out.size(0),-1))
+
+    return out
 
 
 class NetworkCIFAR(nn.Module):

@@ -116,28 +116,43 @@ def main():
   logging.info("args = %s", args)
 
   dataset = Dataset(args.dataset)
-  examples = torch.from_numpy(dataset.get_train().astype('int64'))
+  train_examples = torch.from_numpy(dataset.get_train().astype('int64'))
+  valid_examples = torch.from_numpy(dataset.get_valid().astype('int64'))
 
   CLASSES = dataset.get_shape()[0]
 
   criterion = nn.CrossEntropyLoss()
   criterion = criterion.cuda()
+  #TODO expand Network here to match NetworkKBC
   model = Network(args.init_channels, CLASSES, args.layers, criterion)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
+  regularizer = {
+    'N2': N2(args.reg),
+    'N3': N3(args.reg),
+  }[args.regularizer]
+
+  #TODO force SGD for now, can we change?
+  # optimizer = {
+  #   'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
+  #   'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
+  #   'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
+  # }[args.optimizer]()
+
   optimizer = torch.optim.SGD(
       model.parameters(),
-      args.learning_rate,
-      momentum=args.momentum,
-      weight_decay=args.weight_decay)
+      args.learning_rate)
+  #TODO can we reintroduce these?
+      #momentum=args.momentum,
+      #weight_decay=args.weight_decay)
 
-  train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
+  #train_transform, valid_transform = utils._data_transforms_cifar10(args)
+  #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
 
-  num_train = len(train_data)
-  indices = list(range(num_train))
-  split = int(np.floor(args.train_portion * num_train))
+  #num_train = len(train_data)
+  #indices = list(range(num_train))
+  #split = int(np.floor(args.train_portion * num_train))
 
   train_queue = torch.utils.data.DataLoader(
       train_data, batch_size=args.batch_size,
@@ -176,42 +191,97 @@ def main():
     utils.save(model, os.path.join(args.save, 'weights.pt'))
 
 
-def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
-  objs = utils.AvgrageMeter()
-  top1 = utils.AvgrageMeter()
-  top5 = utils.AvgrageMeter()
+# def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
+#   objs = utils.AvgrageMeter()
+#   top1 = utils.AvgrageMeter()
+#   top5 = utils.AvgrageMeter()
 
-  for step, (input, target) in enumerate(train_queue):
-    model.train()
-    n = input.size(0)
+#   for step, (input, target) in enumerate(train_queue):
+#     model.train()
+#     n = input.size(0)
 
-    input = Variable(input, requires_grad=False).cuda()
-    target = Variable(target, requires_grad=False).cuda(async=True)
+#     input = Variable(input, requires_grad=False).cuda()
+#     target = Variable(target, requires_grad=False).cuda(async=True)
 
-    # get a random minibatch from the search queue with replacement
-    input_search, target_search = next(iter(valid_queue))
-    input_search = Variable(input_search, requires_grad=False).cuda()
-    target_search = Variable(target_search, requires_grad=False).cuda(async=True)
+#     # get a random minibatch from the search queue with replacement
+#     input_search, target_search = next(iter(valid_queue))
+#     input_search = Variable(input_search, requires_grad=False).cuda()
+#     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
 
-    architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
+#     architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
-    optimizer.zero_grad()
-    logits = model(input)
-    loss = criterion(logits, target)
+#     optimizer.zero_grad()
+#     logits = model(input)
+#     loss = criterion(logits, target)
 
-    loss.backward()
-    nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
-    optimizer.step()
+#     loss.backward()
+#     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
+#     optimizer.step()
 
-    prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-    objs.update(loss.data[0], n)
-    top1.update(prec1.data[0], n)
-    top5.update(prec5.data[0], n)
+#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
+#     objs.update(loss.data[0], n)
+#     top1.update(prec1.data[0], n)
+#     top5.update(prec5.data[0], n)
 
-    if step % args.report_freq == 0:
-      logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+#     if step % args.report_freq == 0:
+#       logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
 
-  return top1.avg, objs.avg
+# return top1.avg, objs.avg
+
+def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTensor,
+  model, optimizer: optim.Optimizer, 
+  regularizer: Regularizer, batch_size: int, verbose: bool = True):
+  train_examples = train_examples[torch.randperm(examples.shape[0]), :]
+  valid_examples = valid_examples[torch.randperm(examples.shape[0]), :]
+  loss = nn.CrossEntropyLoss(reduction='mean')
+  with tqdm.tqdm(total=examples.shape[0], unit='ex', disable=not verbose) as bar:
+      bar.set_description(f'train loss')
+      b_begin = 0
+      while b_begin < examples.shape[0]:
+          ##set current batch
+          input_batch = actual_examples[
+              b_begin:b_begin + batch_size
+          ].cuda()
+
+          #     # get a random minibatch from the search queue with replacement
+          #     input_search, target_search = next(iter(valid_queue))
+          #     input_search = Variable(input_search, requires_grad=False).cuda()
+          #     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
+
+          #     architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
+
+
+          #compute predictions, ground truth
+          predictions, factors = model.forward(input_batch)
+          truth = input_batch[:, 2]
+
+          #evaluate loss
+          l_fit = loss(predictions, truth)
+          l_reg = regularizer.forward(factors)
+          l = l_fit + l_reg
+
+          #optimise
+          optimizer.zero_grad()
+          l.backward()
+          optimizer.step()
+          b_begin += batch_size
+
+          #progress bar
+          bar.update(input_batch.shape[0])
+          bar.set_postfix(loss=f'{l.item():.0f}')
+
+          #TODO from DARTS train fn - grad clipping, accuracy metrics?
+          
+def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
+    """
+    aggregate metrics for missing lhs and rhs
+    :param mrrs: d
+    :param hits:
+    :return:
+    """
+    m = (mrrs['lhs'] + mrrs['rhs']) / 2.
+    h = (hits['lhs'] + hits['rhs']) / 2.
+    return {'MRR': m, 'hits@[1,3,10]': h}
 
 
 def infer(valid_queue, model, criterion):
