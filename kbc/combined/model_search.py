@@ -227,7 +227,7 @@ class Network(nn.Module):
     return out, (lhs,rel,rhs)
 
   def _loss(self, input, target):
-    logits = self(input)
+    logits = self(input)[0]
     return self._criterion(logits, target) 
 
   def _initialize_alphas(self):
