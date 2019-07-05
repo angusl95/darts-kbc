@@ -121,9 +121,9 @@ def main():
   valid_examples = torch.from_numpy(dataset.get_valid().astype('int64'))
 
   #TODO this is wrong
-  
+  print(train_examples.shape)
   CLASSES_OLD = dataset.get_shape()[0]
-  CLASSES = train_examples[:,0].max() + 1
+  CLASSES = train_examples[:,0].unique()
 
   print('old class num', CLASSES_OLD)
   print('new class num', CLASSES)
