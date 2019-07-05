@@ -240,13 +240,14 @@ def main():
 def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTensor,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
-  train_examples = train_examples[torch.randperm(examples.shape[0]), :]
-  valid_examples = valid_examples[torch.randperm(examples.shape[0]), :]
+  train_examples = train_examples[torch.randperm(train_examples.shape[0]), :]
+  valid_examples = valid_examples[torch.randperm(valid_examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
-  with tqdm.tqdm(total=examples.shape[0], unit='ex', disable=not verbose) as bar:
+  with tqdm.tqdm(total=valid_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
       b_begin = 0
-      while b_begin < examples.shape[0]:
+      #TODO: should wejust train for length of validation set in each epoch?
+      while b_begin < valid_examples.shape[0]:
           ##set current batch
           input = train_examples[
               b_begin:b_begin + batch_size
