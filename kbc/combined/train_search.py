@@ -239,20 +239,25 @@ def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTens
       b_begin = 0
       while b_begin < examples.shape[0]:
           ##set current batch
-          input_batch = actual_examples[
+          input = train_examples[
               b_begin:b_begin + batch_size
+          ].cuda()
+
+          input_search = valid_examples[
+          b_begin:b_begin + batch_size
           ].cuda()
 
           #     # get a random minibatch from the search queue with replacement
           #     input_search, target_search = next(iter(valid_queue))
           #     input_search = Variable(input_search, requires_grad=False).cuda()
           #     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
-
-          #     architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
+          target = input_batch[:, 2]
+          target_search = search_batch[:, 2]
+          architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
 
           #compute predictions, ground truth
-          predictions, factors = model.forward(input_batch)
+          predictions, factors = model.forward(input)
           truth = input_batch[:, 2]
 
           #evaluate loss
