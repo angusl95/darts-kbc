@@ -122,7 +122,7 @@ def main():
 
   CLASSES = dataset.get_shape()[0]
 
-  criterion = nn.CrossEntropyLoss()
+  criterion = nn.CrossEntropyLoss(reduction='mean')
   criterion = criterion.cuda()
   #TODO there are some default kwargs in network we're not currently setting
   model = Network(args.init_channels, CLASSES, args.layers, criterion, 
