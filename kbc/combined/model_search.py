@@ -135,6 +135,9 @@ class Network(nn.Module):
     self._steps = steps
     self._multiplier = multiplier
 
+    self.rank = rank
+    self.sizes = sizes
+
     self.embeddings = nn.ModuleList([
             nn.Embedding(s, rank, sparse=True)
             for s in sizes[:2]

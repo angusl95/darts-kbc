@@ -122,11 +122,9 @@ def main():
 
   criterion = nn.CrossEntropyLoss()
   criterion = criterion.cuda()
-  #TODO expand Network here to match NetworkKBC
+  #TODO there are some default kwargs in network we're not currently setting
   model = Network(args.init_channels, CLASSES, args.layers, criterion, 
     dataset.get_shape(), args.rank, args.init)
-  #(C, num_classes, layers, criterion, steps=4, multiplier=4, 
-  #  stem_multiplier=3, sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
