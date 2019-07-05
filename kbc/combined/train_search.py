@@ -183,12 +183,19 @@ def main():
     print(F.softmax(model.alphas_reduce, dim=-1))
 
     # training
-    train_acc, train_obj = train(train_queue, valid_queue, model, architect, criterion, optimizer, lr)
+    #was using train_queue/valid_queue here instead of examples
+    train_acc, train_obj = train_epoch(train_examples, valid_examples, model, 
+      architect, criterion, optimizer, regularizer, batch_size, args.learning_rate)
     logging.info('train_acc %f', train_acc)
 
     # validation
-    valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    logging.info('valid_acc %f', valid_acc)
+    # valid_acc, valid_obj = infer(valid_queue, model, criterion)
+    # logging.info('valid_acc %f', valid_acc)
+
+    valid, test, train = [
+            avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
+            for split in ['valid', 'test', 'train']
+        ]
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
 
@@ -231,8 +238,8 @@ def main():
 # return top1.avg, objs.avg
 
 def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTensor,
-  model, optimizer: optim.Optimizer, 
-  regularizer: Regularizer, batch_size: int, verbose: bool = True):
+  model, architect, criterion, optimizer: optim.Optimizer, 
+  regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
   train_examples = train_examples[torch.randperm(examples.shape[0]), :]
   valid_examples = valid_examples[torch.randperm(examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
