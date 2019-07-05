@@ -174,29 +174,29 @@ class Network(nn.Module):
     return model_new
 
   def score(self, x):
-  lhs = self.embeddings[0](x[:, 0])
-  rel = self.embeddings[1](x[:, 1])
-  rhs = self.embeddings[0](x[:, 2])
-  
-  to_score = self.embeddings[0].weight
-  input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-  s0 = s1 = self.stem(input)
-  #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+    lhs = self.embeddings[0](x[:, 0])
+    rel = self.embeddings[1](x[:, 1])
+    rhs = self.embeddings[0](x[:, 2])
+    
+    to_score = self.embeddings[0].weight
+    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    s0 = s1 = self.stem(input)
+    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
 
-  for i, cell in enumerate(self.cells):
-    if cell.reduction:
-        weights = F.softmax(self.alphas_reduce, dim=-1)
-    else:
-        weights = F.softmax(self.alphas_normal, dim=-1)
-    #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
-    s0, s1 = s1, cell(s0, s1, weights)
-  out = self.global_pooling(s1)
-  #print('out shape after global pooling', out.shape)
-  out = self.projection(out.view(out.size(0),-1))
-  out = torch.sum(
-      out * rhs, 1, keepdim=True
-  )
-  return out
+    for i, cell in enumerate(self.cells):
+      if cell.reduction:
+          weights = F.softmax(self.alphas_reduce, dim=-1)
+      else:
+          weights = F.softmax(self.alphas_normal, dim=-1)
+      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
+      s0, s1 = s1, cell(s0, s1, weights)
+    out = self.global_pooling(s1)
+    #print('out shape after global pooling', out.shape)
+    out = self.projection(out.view(out.size(0),-1))
+    out = torch.sum(
+        out * rhs, 1, keepdim=True
+    )
+    return out
 
   def forward(self, x):
     lhs = self.embeddings[0](x[:, 0])
