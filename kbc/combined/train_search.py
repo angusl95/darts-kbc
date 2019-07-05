@@ -123,7 +123,7 @@ def main():
   #TODO this is wrong
   
   CLASSES_OLD = dataset.get_shape()[0]
-  CLASSES = train_examples[0,:].unique().size(0)
+  CLASSES = train_examples[:,0].max() + 1
 
   print('old class num', CLASSES_OLD)
   print('new class num', CLASSES)
