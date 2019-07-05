@@ -11,7 +11,6 @@ import argparse
 import torch.nn as nn
 import torch.utils
 import torch.nn.functional as F
-import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
 
 from torch import optim
@@ -124,7 +123,10 @@ def main():
   criterion = nn.CrossEntropyLoss()
   criterion = criterion.cuda()
   #TODO expand Network here to match NetworkKBC
-  model = Network(args.init_channels, CLASSES, args.layers, criterion)
+  model = Network(args.init_channels, CLASSES, args.layers, criterion, 
+    dataset.get_shape(), args.rank, args.init)
+  #(C, num_classes, layers, criterion, steps=4, multiplier=4, 
+  #  stem_multiplier=3, sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
@@ -154,15 +156,17 @@ def main():
   #indices = list(range(num_train))
   #split = int(np.floor(args.train_portion * num_train))
 
-  train_queue = torch.utils.data.DataLoader(
-      train_data, batch_size=args.batch_size,
-      sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[:split]),
-      pin_memory=True, num_workers=2)
+  #TODO use queues?
 
-  valid_queue = torch.utils.data.DataLoader(
-      train_data, batch_size=args.batch_size,
-      sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
-      pin_memory=True, num_workers=2)
+  # train_queue = torch.utils.data.DataLoader(
+  #     train_data, batch_size=args.batch_size,
+  #     sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[:split]),
+  #     pin_memory=True, num_workers=2)
+
+  # valid_queue = torch.utils.data.DataLoader(
+  #     train_data, batch_size=args.batch_size,
+  #     sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
+  #     pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, float(args.epochs), eta_min=args.learning_rate_min)
@@ -251,8 +255,8 @@ def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTens
           #     input_search, target_search = next(iter(valid_queue))
           #     input_search = Variable(input_search, requires_grad=False).cuda()
           #     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
-          target = input_batch[:, 2]
-          target_search = search_batch[:, 2]
+          target = input[:, 2]
+          target_search = input_search[:, 2]
           architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
 

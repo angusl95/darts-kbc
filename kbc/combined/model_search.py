@@ -1,11 +1,74 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Tuple, List, Dict
 from operations import *
 from torch.autograd import Variable
 from genotypes import PRIMITIVES
 from genotypes import Genotype
 
+class KBCModel(nn.Module, ABC):
+    @abstractmethod
+    def get_rhs(self, chunk_begin: int, chunk_size: int):
+        pass
+
+    @abstractmethod
+    def get_queries(self, queries: torch.Tensor):
+        pass
+
+    @abstractmethod
+    def score(self, x: torch.Tensor):
+        pass
+
+    def get_ranking(
+            self, queries: torch.Tensor,
+            filters: Dict[Tuple[int, int], List[int]],
+            batch_size: int = 1000, chunk_size: int = -1
+    ):
+        """
+        Returns filtered ranking for each queries.
+        :param queries: a torch.LongTensor of triples (lhs, rel, rhs)
+        :param filters: filters[(lhs, rel)] gives the rhs to filter from ranking
+        :param batch_size: maximum number of queries processed at once
+        :param chunk_size: maximum number of candidates processed at once
+        :return:
+        """
+        if chunk_size < 0:
+            chunk_size = self.sizes[2]
+        ranks = torch.ones(len(queries))
+        with torch.no_grad():
+            c_begin = 0
+            while c_begin < self.sizes[2]:
+                b_begin = 0
+                rhs = self.get_rhs(c_begin, chunk_size)
+                while b_begin < len(queries):
+                    these_queries = queries[b_begin:b_begin + batch_size]
+                    q = self.get_queries(these_queries)
+
+                    scores = q @ rhs
+                    targets = self.score(these_queries)
+
+                    # set filtered and true scores to -1e6 to be ignored
+                    # take care that scores are chunked
+                    for i, query in enumerate(these_queries):
+                        filter_out = filters[(query[0].item(), query[1].item())]
+                        filter_out += [queries[b_begin + i, 2].item()]
+                        if chunk_size < self.sizes[2]:
+                            filter_in_chunk = [
+                                int(x - c_begin) for x in filter_out
+                                if c_begin <= x < c_begin + chunk_size
+                            ]
+                            scores[i, torch.LongTensor(filter_in_chunk)] = -1e6
+                        else:
+                            scores[i, torch.LongTensor(filter_out)] = -1e6
+                    ranks[b_begin:b_begin + batch_size] += torch.sum(
+                        (scores > targets).float(), dim=1
+                    ).cpu()
+
+                    b_begin += batch_size
+
+                c_begin += chunk_size
+        return ranks
 
 class MixedOp(nn.Module):
 
@@ -60,7 +123,9 @@ class Cell(nn.Module):
 
 class Network(nn.Module):
 
-  def __init__(self, C, num_classes, layers, criterion, steps=4, multiplier=4, stem_multiplier=3):
+  def __init__(self, C, num_classes, layers, criterion, 
+    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
+    steps=4, multiplier=4, stem_multiplier=3):
     super(Network, self).__init__()
     self._C = C
     self._num_classes = num_classes
@@ -68,6 +133,13 @@ class Network(nn.Module):
     self._criterion = criterion
     self._steps = steps
     self._multiplier = multiplier
+
+    self.embeddings = nn.ModuleList([
+            nn.Embedding(s, rank, sparse=True)
+            for s in sizes[:2]
+        ])
+    self.embeddings[0].weight.data *= init_size
+    self.embeddings[1].weight.data *= init_size
 
     C_curr = stem_multiplier*C
     self.stem = nn.Sequential(
@@ -90,6 +162,7 @@ class Network(nn.Module):
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.projection = nn.Linear(C_prev, self.rank)
     self.classifier = nn.Linear(C_prev, num_classes)
 
     self._initialize_alphas()
@@ -100,7 +173,39 @@ class Network(nn.Module):
         x.data.copy_(y.data)
     return model_new
 
-  def forward(self, input):
+  def score(self, x):
+  lhs = self.embeddings[0](x[:, 0])
+  rel = self.embeddings[1](x[:, 1])
+  rhs = self.embeddings[0](x[:, 2])
+  
+  to_score = self.embeddings[0].weight
+  input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+  s0 = s1 = self.stem(input)
+  #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+
+  for i, cell in enumerate(self.cells):
+    if cell.reduction:
+        weights = F.softmax(self.alphas_reduce, dim=-1)
+    else:
+        weights = F.softmax(self.alphas_normal, dim=-1)
+    #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
+    s0, s1 = s1, cell(s0, s1, weights)
+  out = self.global_pooling(s1)
+  #print('out shape after global pooling', out.shape)
+  out = self.projection(out.view(out.size(0),-1))
+  out = torch.sum(
+      out * rhs, 1, keepdim=True
+  )
+  return out
+
+  def forward(self, x):
+    lhs = self.embeddings[0](x[:, 0])
+    rel = self.embeddings[1](x[:, 1])
+    rhs = self.embeddings[0](x[:, 2])
+    #print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
+
+    to_score = self.embeddings[0].weight
+    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = self.stem(input)
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -109,8 +214,13 @@ class Network(nn.Module):
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
     out = self.global_pooling(s1)
-    logits = self.classifier(out.view(out.size(0),-1))
-    return logits
+    # logits = self.classifier(out.view(out.size(0),-1))
+    # return logits
+    out = self.projection(out.view(out.size(0),-1))
+    out = torch.sum(
+        out * rhs, 1, keepdim=True
+    )
+    return out, (lhs,rel,rhs)
 
   def _loss(self, input, target):
     logits = self(input)
