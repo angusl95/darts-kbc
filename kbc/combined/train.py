@@ -259,6 +259,8 @@ def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer,
           truth = input_batch[:, 2]
 
           #evaluate loss
+          print('predictions shape', predictions.shape)
+          print('truth shape', truth.shape)
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
@@ -272,7 +274,7 @@ def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer,
           #progress bar
           bar.update(input_batch.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
-          
+
 def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     """
     aggregate metrics for missing lhs and rhs
