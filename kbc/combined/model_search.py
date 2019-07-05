@@ -227,7 +227,7 @@ class Network(nn.Module):
     return out, (lhs,rel,rhs)
 
   def _loss(self, input, target):
-    logits = self(input)[0]
+    logits = self(input)[0].squeeze()
     print('logits shape', logits.shape)
     print('target shape', target.shape)
     return self._criterion(logits, target) 
