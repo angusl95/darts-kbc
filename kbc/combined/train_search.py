@@ -120,7 +120,13 @@ def main():
   train_examples = torch.from_numpy(dataset.get_train().astype('int64'))
   valid_examples = torch.from_numpy(dataset.get_valid().astype('int64'))
 
-  CLASSES = dataset.get_shape()[0]
+  #TODO this is wrong
+  
+  CLASSES_OLD = dataset.get_shape()[0]
+  CLASSES = train_examples[0,:].unique().size(0)
+
+  print('old class num', CLASSES_OLD)
+  print('new class num', CLASSES)
 
   criterion = nn.CrossEntropyLoss()
   criterion = criterion.cuda()
