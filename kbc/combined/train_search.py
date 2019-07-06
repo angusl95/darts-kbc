@@ -159,12 +159,14 @@ def main():
 
   train_queue = torch.utils.data.DataLoader(
       train_examples, batch_size=args.batch_size,
-      sampler=torch.utils.data.sampler.RandomSampler(),
+      shuffle = True,
+      #sampler=torch.utils.data.sampler.RandomSampler(),
       pin_memory=True, num_workers=2)
 
   valid_queue = torch.utils.data.DataLoader(
       valid_examples, batch_size=args.batch_size,
-      sampler=torch.utils.data.sampler.RandomSampler(),
+      shuffle = True,
+      #sampler=torch.utils.data.sampler.RandomSampler(),
       pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
