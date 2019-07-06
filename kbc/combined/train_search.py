@@ -187,7 +187,7 @@ def main():
     #removed acc/obj here as in original code
     train_epoch(train_examples, valid_examples, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)
-    logging.info('train_acc %f', train_acc)
+    #logging.info('train_acc %f', train_acc)
 
     # validation
     # valid_acc, valid_obj = infer(valid_queue, model, criterion)
