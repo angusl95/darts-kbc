@@ -190,7 +190,7 @@ def main():
     # training
     #was using train_queue/valid_queue here instead of examples
     #removed acc/obj here as in original code
-    train_epoch(train_queue, valid_queue, model, 
+    train_epoch(train_examples, train_queue, valid_queue, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)
     #logging.info('train_acc %f', train_acc)
 
@@ -254,7 +254,7 @@ def main():
 
 # return top1.avg, objs.avg
 
-def train_epoch(train_queue, valid_queue,
+def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
   #train_examples = train_examples[torch.randperm(train_examples.shape[0]), :]
