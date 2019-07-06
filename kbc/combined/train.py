@@ -256,6 +256,7 @@ def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer,
           ].cuda()
 
           #compute predictions, ground truth
+          print('input batch shape', input_batch.shape)
           predictions, factors = model.forward(input_batch)
           truth = input_batch[:, 2]
 
