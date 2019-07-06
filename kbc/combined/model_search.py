@@ -221,9 +221,7 @@ class Network(nn.Module):
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
     out = self.projection(out.view(out.size(0),-1))
-    out = torch.sum(
-        out * rhs, 1, keepdim=True
-    )
+    out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
 
   def _loss(self, input, target):
@@ -233,8 +231,7 @@ class Network(nn.Module):
     print('target shape', target.shape)
     #logits = self(input)[0].squeeze()
     print('self(input) length', len(self(input)))
-    #logits = self(input)[0]
-    logits = self.forward(input)[0]
+    logits = self(input)[0]
     print('logits shape', logits.shape)
     #print('logits shape', logits.shape)
     #print('target shape', target.shape)
