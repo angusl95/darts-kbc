@@ -233,7 +233,8 @@ class Network(nn.Module):
     print('target shape', target.shape)
     #logits = self(input)[0].squeeze()
     print('self(input) length', len(self(input)))
-    logits = self(input)[0]
+    #logits = self(input)[0]
+    logits = self.forward(input)[0]
     print('logits shape', logits.shape)
     #print('logits shape', logits.shape)
     #print('target shape', target.shape)
