@@ -234,7 +234,7 @@ class Network(nn.Module):
     #logits = self(input)[0].squeeze()
     print('self(input) length', len(self(input)))
     logits = self(input)[0]
-    print('logits shape', logits)
+    print('logits shape', logits.shape)
     #print('logits shape', logits.shape)
     #print('target shape', target.shape)
     return self._criterion(logits, target) 
