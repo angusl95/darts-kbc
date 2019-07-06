@@ -10,6 +10,7 @@ import logging
 import argparse
 import torch.nn as nn
 import torch.utils
+import torch.utils.data
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
 
@@ -279,12 +280,12 @@ def train_epoch(train_queue, valid_queue,
           n = input.size(0)
 
           input = Variable(input, requires_grad=False).cuda()
-          target = Variable(input[:,2], requires_grad=False).cuda(async=True)
+          target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
           # get a random minibatch from the search queue with replacement
           input_search = next(iter(valid_queue))
           input_search = Variable(input_search, requires_grad=False).cuda()
-          target_search = Variable(input_search[:,2], requires_grad=False).cuda(async=True)
+          target_search = Variable(input_search[:,2], requires_grad=False).cuda()#async=True)
 
           architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
