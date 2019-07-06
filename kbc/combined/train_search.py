@@ -184,7 +184,8 @@ def main():
 
     # training
     #was using train_queue/valid_queue here instead of examples
-    train_acc, train_obj = train_epoch(train_examples, valid_examples, model, 
+    #removed acc/obj here as in original code
+    train_epoch(train_examples, valid_examples, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)
     logging.info('train_acc %f', train_acc)
 
