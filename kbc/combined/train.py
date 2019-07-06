@@ -103,7 +103,7 @@ def main():
   np.random.seed(args.seed)
   torch.cuda.set_device(args.gpu)
   #TODO: change back for 1080?
-  cudnn.benchmark = False
+  cudnn.benchmark = True
   torch.manual_seed(args.seed)
   cudnn.enabled=True
   torch.cuda.manual_seed(args.seed)
