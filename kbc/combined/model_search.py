@@ -224,6 +224,27 @@ class Network(KBCModel):
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
 
+  def get_rhs(self, chunk_begin: int, chunk_size: int):
+    return self.embeddings[0].weight.data[
+        chunk_begin:chunk_begin + chunk_size
+    ].transpose(0, 1)
+
+  def get_queries(self, queries: torch.Tensor):
+    lhs = self.embeddings[0](queries[:, 0])
+    rel = self.embeddings[1](queries[:, 1])
+    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    s0 = s1 = self.stem(input)
+    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+
+    for i, cell in enumerate(self.cells):
+      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
+      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+    out = self.global_pooling(s1)
+    #print('out shape after global pooling', out.shape)
+    out = self.projection(out.view(out.size(0),-1))
+
+    return out
+
   def _loss(self, input, target):  
     logits = self(input)[0]
     return self._criterion(logits, target) 
