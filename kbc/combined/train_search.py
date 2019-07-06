@@ -156,15 +156,15 @@ def main():
 
   #TODO use queues?
 
-  # train_queue = torch.utils.data.DataLoader(
-  #     train_data, batch_size=args.batch_size,
-  #     sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[:split]),
-  #     pin_memory=True, num_workers=2)
+  train_queue = torch.utils.data.DataLoader(
+      train_examples, batch_size=args.batch_size,
+      sampler=torch.utils.data.sampler.RandomSampler(),
+      pin_memory=True, num_workers=2)
 
-  # valid_queue = torch.utils.data.DataLoader(
-  #     train_data, batch_size=args.batch_size,
-  #     sampler=torch.utils.data.sampler.SubsetRandomSampler(indices[split:num_train]),
-  #     pin_memory=True, num_workers=2)
+  valid_queue = torch.utils.data.DataLoader(
+      valid_examples, batch_size=args.batch_size,
+      sampler=torch.utils.data.sampler.RandomSampler(),
+      pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, float(args.epochs), eta_min=args.learning_rate_min)
@@ -187,7 +187,7 @@ def main():
     # training
     #was using train_queue/valid_queue here instead of examples
     #removed acc/obj here as in original code
-    train_epoch(train_examples, valid_examples, model, 
+    train_epoch(train_queue, valid_queue, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)
     #logging.info('train_acc %f', train_acc)
 
@@ -251,32 +251,41 @@ def main():
 
 # return top1.avg, objs.avg
 
-def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTensor,
+def train_epoch(train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
-  train_examples = train_examples[torch.randperm(train_examples.shape[0]), :]
-  valid_examples = valid_examples[torch.randperm(valid_examples.shape[0]), :]
+  #train_examples = train_examples[torch.randperm(train_examples.shape[0]), :]
+  #valid_examples = valid_examples[torch.randperm(valid_examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
-  with tqdm.tqdm(total=valid_examples.shape[0], unit='ex', disable=not verbose) as bar:
+  with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
       b_begin = 0
       #TODO: should wejust train for length of validation set in each epoch?
-      while b_begin < valid_examples.shape[0]:
+      #while b_begin < valid_examples.shape[0]:
+      for step, input in enumerate(train_queue):
           ##set current batch
-          input = train_examples[
-              b_begin:b_begin + batch_size
-          ].cuda()
+          # input = train_examples[
+          #     b_begin:b_begin + batch_size
+          # ].cuda()
 
-          input_search = valid_examples[
-          b_begin:b_begin + batch_size
-          ].cuda()
+          # input_search = valid_examples[
+          # b_begin:b_begin + batch_size
+          # ].cuda()
 
-          #     # get a random minibatch from the search queue with replacement
-          #     input_search, target_search = next(iter(valid_queue))
-          #     input_search = Variable(input_search, requires_grad=False).cuda()
-          #     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
-          target = input[:, 2]
-          target_search = input_search[:, 2]
+          # target = input[:, 2]
+          # target_search = input_search[:, 2]
+
+          model.train()
+          n = input.size(0)
+
+          input = Variable(input, requires_grad=False).cuda()
+          target = Variable(input[:,2], requires_grad=False).cuda(async=True)
+
+          # get a random minibatch from the search queue with replacement
+          input_search = next(iter(valid_queue))
+          input_search = Variable(input_search, requires_grad=False).cuda()
+          target_search = Variable(input_search[:,2], requires_grad=False).cuda(async=True)
+
           architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
 
