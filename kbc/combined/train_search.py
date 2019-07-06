@@ -31,7 +31,7 @@ parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
 parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-parser.add_argument('--epochs', type=int, default=50, help='num of training epochs')
+parser.add_argument('--epochs', type=int, default=100, help='num of training epochs')
 parser.add_argument('--init_channels', type=int, default=16, help='num of init channels')
 parser.add_argument('--layers', type=int, default=8, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
@@ -168,6 +168,8 @@ def main():
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, float(args.epochs), eta_min=args.learning_rate_min)
+  best_acc = 0
+  curve = {'train': [], 'valid': [], 'test': []}
 
   architect = Architect(model, args)
 
@@ -192,11 +194,22 @@ def main():
     # validation
     # valid_acc, valid_obj = infer(valid_queue, model, criterion)
     # logging.info('valid_acc %f', valid_acc)
+    if epoch % 10 == 0:
+      valid, test, train = [
+              avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
+              for split in ['valid', 'test', 'train']
+          ]
+      curve['valid'].append(valid)
+      curve['test'].append(test)
+      curve['train'].append(train)
 
-    valid, test, train = [
-            avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
-            for split in ['valid', 'test', 'train']
-        ]
+      print("\t TRAIN: ", train)
+      print("\t VALID : ", valid)
+
+      is_best = False
+      if valid['MRR'] > best_acc:
+        best_acc = valid['MRR']
+        is_best = True
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
 
