@@ -224,17 +224,8 @@ class Network(nn.Module):
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
 
-  def _loss(self, input, target):
-    print('self', self)
-    
-    print('input shape', input.shape)
-    print('target shape', target.shape)
-    #logits = self(input)[0].squeeze()
-    print('self(input) length', len(self(input)))
+  def _loss(self, input, target):  
     logits = self(input)[0]
-    print('logits shape', logits.shape)
-    #print('logits shape', logits.shape)
-    #print('target shape', target.shape)
     return self._criterion(logits, target) 
 
   def _initialize_alphas(self):
