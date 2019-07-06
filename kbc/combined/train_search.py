@@ -282,7 +282,7 @@ def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTens
           b_begin += batch_size
 
           #progress bar
-          bar.update(input_batch.shape[0])
+          bar.update(input.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 
           #TODO from DARTS train fn - grad clipping, accuracy metrics?
