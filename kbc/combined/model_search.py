@@ -122,7 +122,7 @@ class Cell(nn.Module):
     return torch.cat(states[-self._multiplier:], dim=1)
 
 
-class Network(nn.Module):
+class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, 
     sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
