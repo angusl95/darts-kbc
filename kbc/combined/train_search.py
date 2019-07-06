@@ -268,7 +268,7 @@ def train_epoch(train_examples: torch.LongTensor, valid_examples: torch.LongTens
 
           #compute predictions, ground truth
           predictions, factors = model.forward(input)
-          truth = input_batch[:, 2]
+          truth = input[:, 2]
 
           #evaluate loss
           l_fit = loss(predictions, truth)
