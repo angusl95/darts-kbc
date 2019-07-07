@@ -197,7 +197,7 @@ def main():
     # validation
     # valid_acc, valid_obj = infer(valid_queue, model, criterion)
     # logging.info('valid_acc %f', valid_acc)
-    if (epoch + 1) % arg.report_freq == 0:
+    if (epoch + 1) % args.report_freq == 0:
       valid, test, train = [
               avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
               for split in ['valid', 'test', 'train']
