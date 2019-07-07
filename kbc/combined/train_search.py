@@ -30,7 +30,7 @@ parser.add_argument('--learning_rate', type=float, default=0.025, help='init lea
 parser.add_argument('--learning_rate_min', type=float, default=0.001, help='min learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
-parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
+parser.add_argument('--report_freq', type=float, default=5, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--epochs', type=int, default=100, help='num of training epochs')
 parser.add_argument('--init_channels', type=int, default=16, help='num of init channels')
@@ -197,7 +197,7 @@ def main():
     # validation
     # valid_acc, valid_obj = infer(valid_queue, model, criterion)
     # logging.info('valid_acc %f', valid_acc)
-    if epoch % 10 == 0:
+    if (epoch + 1) % arg.report_freq == 0:
       valid, test, train = [
               avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
               for split in ['valid', 'test', 'train']
