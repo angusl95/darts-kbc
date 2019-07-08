@@ -186,7 +186,8 @@ def main():
     logging.info('genotype = %s', genotype)
 
     print(F.softmax(model.alphas_normal, dim=-1))
-    print(F.softmax(model.alphas_reduce, dim=-1))
+    if args.reduction:
+      print(F.softmax(model.alphas_reduce, dim=-1))
 
     # training
     #was using train_queue/valid_queue here instead of examples
