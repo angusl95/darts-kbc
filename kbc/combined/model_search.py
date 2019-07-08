@@ -161,6 +161,8 @@ class Network(KBCModel):
           reduction = True
         else:
           reduction = False
+      else:
+        reduction = False
       cell = Cell(steps, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]
