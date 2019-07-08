@@ -126,7 +126,7 @@ class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, 
     sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
-    steps=4, multiplier=4, stem_multiplier=3):
+    reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
     super(Network, self).__init__()
     self._C = C
     self._num_classes = num_classes
@@ -155,11 +155,12 @@ class Network(KBCModel):
     self.cells = nn.ModuleList()
     reduction_prev = False
     for i in range(layers):
-      if i in [layers//3, 2*layers//3]:
-        C_curr *= 2
-        reduction = True
-      else:
-        reduction = False
+      if reduction_flag:
+        if i in [layers//3, 2*layers//3]:
+          C_curr *= 2
+          reduction = True
+        else:
+          reduction = False
       cell = Cell(steps, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]

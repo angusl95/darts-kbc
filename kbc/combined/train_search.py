@@ -46,6 +46,7 @@ parser.add_argument('--train_portion', type=float, default=0.5, help='portion of
 parser.add_argument('--unrolled', action='store_true', default=False, help='use one-step unrolled validation loss')
 parser.add_argument('--arch_learning_rate', type=float, default=3e-4, help='learning rate for arch encoding')
 parser.add_argument('--arch_weight_decay', type=float, default=1e-3, help='weight decay for arch encoding')
+parser.add_argument('--reduction', type=bool, default=True, help='use reduction cells in convnet')
 
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument(
@@ -125,7 +126,7 @@ def main():
   criterion = criterion.cuda()
   #TODO there are some default kwargs in network we're not currently setting
   model = Network(args.init_channels, CLASSES, args.layers, criterion, 
-    dataset.get_shape(), args.rank, args.init)
+    dataset.get_shape(), args.rank, args.init, args.reduction)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
