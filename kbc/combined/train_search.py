@@ -100,6 +100,8 @@ fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
+print('reduction arg', args.reduction)
+
 
 
 def main():
@@ -186,6 +188,7 @@ def main():
     logging.info('genotype = %s', genotype)
 
     print(F.softmax(model.alphas_normal, dim=-1))
+    print('checking args.reduciton before printing alphas', args.reduction)
     if args.reduction:
       print(F.softmax(model.alphas_reduce, dim=-1))
 
