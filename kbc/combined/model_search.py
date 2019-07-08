@@ -124,7 +124,7 @@ class Cell(nn.Module):
 
 class Network(KBCModel):
 
-  def __init__(self, C, num_classes, layers, criterion, 
+  def __init__(self, C, num_classes, layers, criterion, regularizer, 
     sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
     reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
     super(Network, self).__init__()
@@ -132,6 +132,7 @@ class Network(KBCModel):
     self._num_classes = num_classes
     self._layers = layers
     self._criterion = criterion
+    self._regularizer = regularizer
     self._steps = steps
     self._multiplier = multiplier
 
@@ -249,8 +250,13 @@ class Network(KBCModel):
     return out
 
   def _loss(self, input, target):  
-    logits = self(input)[0]
+    logits, factors = self(input)[0]
+
+    l_fit = self._criterion(logits, target)
+    l_reg = self._regularizer.forward(factors)
     return self._criterion(logits, target) 
+    #return l_fit + l_reg
+
 
   def _initialize_alphas(self):
     k = sum(1 for i in range(self._steps) for n in range(2+i))

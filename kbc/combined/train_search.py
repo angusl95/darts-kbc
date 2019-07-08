@@ -126,16 +126,17 @@ def main():
 
   criterion = nn.CrossEntropyLoss(reduction='mean')
   criterion = criterion.cuda()
-  #TODO there are some default kwargs in network we're not currently setting
-  model = Network(args.init_channels, CLASSES, args.layers, criterion, 
-    dataset.get_shape(), args.rank, args.init, args.reduction)
-  model = model.cuda()
-  logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
   regularizer = {
-    'N2': N2(args.reg),
-    'N3': N3(args.reg),
-  }[args.regularizer]
+      'N2': N2(args.reg),
+      'N3': N3(args.reg),
+    }[args.regularizer]
+
+  #TODO there are some default kwargs in network we're not currently setting
+  model = Network(args.init_channels, CLASSES, args.layers, criterion, 
+    regularizer, dataset.get_shape(), args.rank, args.init, args.reduction)
+  model = model.cuda()
+  logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
   #TODO force SGD for now, can we change?
   # optimizer = {
@@ -188,7 +189,6 @@ def main():
     logging.info('genotype = %s', genotype)
 
     print(F.softmax(model.alphas_normal, dim=-1))
-    print('checking args.reduciton before printing alphas', args.reduction)
     if args.reduction:
       print(F.softmax(model.alphas_reduce, dim=-1))
 
