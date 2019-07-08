@@ -250,7 +250,7 @@ class Network(KBCModel):
     return out
 
   def _loss(self, input, target):  
-    logits, factors = self(input)[0]
+    logits, factors = self(input)
 
     l_fit = self._criterion(logits, target)
     l_reg = self._regularizer.forward(factors)
