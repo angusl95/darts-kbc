@@ -167,7 +167,7 @@ class Network(KBCModel):
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(C_prev, self.rank)
+    self.projection = nn.Linear(C_prev, self.rank, bias=False)
     self.classifier = nn.Linear(C_prev, num_classes)
 
     self._initialize_alphas()
@@ -195,6 +195,7 @@ class Network(KBCModel):
       s0, s1 = s1, cell(s0, s1, weights)
     out = self.global_pooling(s1)
     out = self.projection(out.view(out.size(0),-1))
+    out = F.relu(out)
     out = torch.sum(
         out * rhs, 1, keepdim=True
     )
@@ -218,6 +219,7 @@ class Network(KBCModel):
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
     out = self.projection(out.view(out.size(0),-1))
+    out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
 
@@ -240,6 +242,7 @@ class Network(KBCModel):
       s0, s1 = s1, cell(s0, s1, weights)
     out = self.global_pooling(s1)
     out = self.projection(out.view(out.size(0),-1))
+    out = F.relu(out)
 
     return out
 
