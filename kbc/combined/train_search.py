@@ -309,6 +309,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           #optimise
           optimizer.zero_grad()
           l.backward()
+          nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
           b_begin += batch_size
 
