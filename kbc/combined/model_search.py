@@ -254,8 +254,8 @@ class Network(KBCModel):
 
     l_fit = self._criterion(logits, target)
     l_reg = self._regularizer.forward(factors)
-    return self._criterion(logits, target) 
-    #return l_fit + l_reg
+    #return self._criterion(logits, target) 
+    return l_fit + l_reg
 
 
   def _initialize_alphas(self):
