@@ -140,7 +140,8 @@ class Network(KBCModel):
     self.sizes = sizes
 
     self.embeddings = nn.ModuleList([
-            nn.Embedding(s, rank, sparse=True)
+      #TODO restore sparse here?
+            nn.Embedding(s, rank)#, sparse=True)
             for s in sizes[:2]
         ])
     self.embeddings[0].weight.data *= init_size
