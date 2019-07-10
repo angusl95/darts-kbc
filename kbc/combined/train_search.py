@@ -147,10 +147,10 @@ def main():
 
   optimizer = torch.optim.SGD(
       model.parameters(),
-      args.learning_rate)
+      args.learning_rate,
   #TODO can we reintroduce these?
-      #momentum=args.momentum,
-      #weight_decay=args.weight_decay)
+      momentum=args.momentum,
+      weight_decay=args.weight_decay)
 
   #train_transform, valid_transform = utils._data_transforms_cifar10(args)
   #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
