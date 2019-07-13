@@ -92,11 +92,11 @@ class Cell(nn.Module):
     super(Cell, self).__init__()
     self.reduction = reduction
 
-    if reduction_prev:
-      self.preprocess0 = FactorizedReduce(C_prev_prev, C, affine=False)
-    else:
-      self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0, affine=False)
-    self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
+    # if reduction_prev:
+    #   self.preprocess0 = FactorizedReduce(C_prev_prev, C, affine=False)
+    # else:
+    #   self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0, affine=False)
+    # self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
     self._steps = steps
     self._multiplier = multiplier
 
@@ -109,8 +109,8 @@ class Cell(nn.Module):
         self._ops.append(op)
 
   def forward(self, s0, s1, weights):
-    s0 = self.preprocess0(s0)
-    s1 = self.preprocess1(s1)
+    # s0 = self.preprocess0(s0)
+    # s1 = self.preprocess1(s1)
 
     states = [s0, s1]
     offset = 0
@@ -162,7 +162,7 @@ class Network(KBCModel):
     self.cells = nn.ModuleList()
     reduction_prev = False
     for i in range(layers):
-      if reduction_flag:
+      if self._reduction_flag:
         if i in [layers//3, 2*layers//3]:
           C_curr *= 2
           reduction = True
