@@ -127,6 +127,7 @@ class Network(KBCModel):
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
     sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
     reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
+    #TODO: remove stem multiplier from args?
     super(Network, self).__init__()
     self._C = C
     self._num_classes = num_classes
@@ -147,6 +148,7 @@ class Network(KBCModel):
     self.embeddings[0].weight.data *= init_size
     self.embeddings[1].weight.data *= init_size
 
+    C_curr = C
     #C_curr = stem_multiplier*C
     # self.stem = nn.Sequential(
     #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
