@@ -136,9 +136,12 @@ class Network(KBCModel):
     self._regularizer = regularizer
     self._steps = steps
     self._multiplier = multiplier
+    self._stem_multiplier = stem_multiplier
 
     self.rank = rank
     self.sizes = sizes
+    self._init_size = init_size
+    self._reduction_flag = reduction_flag
 
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
@@ -179,7 +182,9 @@ class Network(KBCModel):
     self._initialize_alphas()
 
   def new(self):
-    model_new = Network(self._C, self._num_classes, self._layers, self._criterion).cuda()
+    model_new = Network(self._C, self._num_classes, self._layers, self._criterion, self._regularizer,
+      self.sizes, self.rank, self._init_size, self._reduction_flag, self._steps, 
+      self._multiplier, self._stem_multiplier).cuda()
     for x, y in zip(model_new.arch_parameters(), self.arch_parameters()):
         x.data.copy_(y.data)
     return model_new
