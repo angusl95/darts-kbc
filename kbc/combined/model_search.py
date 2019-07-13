@@ -147,7 +147,7 @@ class Network(KBCModel):
     self.embeddings[0].weight.data *= init_size
     self.embeddings[1].weight.data *= init_size
 
-    C_curr = stem_multiplier*C
+    #C_curr = stem_multiplier*C
     # self.stem = nn.Sequential(
     #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
     #   nn.BatchNorm2d(C_curr)
