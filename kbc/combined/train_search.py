@@ -101,10 +101,6 @@ fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
-print('reduction arg', args.reduction)
-
-
-
 def main():
   if not torch.cuda.is_available():
     logging.info('no gpu device available')

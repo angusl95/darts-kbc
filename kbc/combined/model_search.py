@@ -148,10 +148,10 @@ class Network(KBCModel):
     self.embeddings[1].weight.data *= init_size
 
     C_curr = stem_multiplier*C
-    self.stem = nn.Sequential(
-      nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
-      nn.BatchNorm2d(C_curr)
-    )
+    # self.stem = nn.Sequential(
+    #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
+    #   nn.BatchNorm2d(C_curr)
+    # )
  
     C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
     self.cells = nn.ModuleList()
@@ -172,7 +172,7 @@ class Network(KBCModel):
 
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(C_prev, self.rank, bias=False)
-    self.classifier = nn.Linear(C_prev, num_classes)
+    #self.classifier = nn.Linear(C_prev, num_classes)
 
     self._initialize_alphas()
 
@@ -189,7 +189,7 @@ class Network(KBCModel):
     
     to_score = self.embeddings[0].weight
     input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = self.stem(input)
+    s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -212,7 +212,7 @@ class Network(KBCModel):
 
     to_score = self.embeddings[0].weight
     input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = self.stem(input)
+    s0 = s1 = input
     for i, cell in enumerate(self.cells):
       if cell.reduction:
         weights = F.softmax(self.alphas_reduce, dim=-1)
@@ -236,7 +236,7 @@ class Network(KBCModel):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
     input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = self.stem(input)
+    s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
