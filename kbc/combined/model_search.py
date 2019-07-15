@@ -259,7 +259,7 @@ class Network(KBCModel):
 
   def _loss(self, input, target):  
     #TODO: definitely just alias for forward method?
-    logits, factors = self(input)l
+    logits, factors = self(input)
     l_fit = self._criterion(logits, target)
     l_reg = self._regularizer.forward(factors)
     #return self._criterion(logits, target) 
