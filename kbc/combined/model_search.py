@@ -258,8 +258,8 @@ class Network(KBCModel):
     return out
 
   def _loss(self, input, target):  
-    logits, factors = self(input)
-
+    #TODO: definitely just alias for forward method?
+    logits, factors = self(input)l
     l_fit = self._criterion(logits, target)
     l_reg = self._regularizer.forward(factors)
     #return self._criterion(logits, target) 
@@ -271,8 +271,7 @@ class Network(KBCModel):
     num_ops = len(PRIMITIVES)
 
     self.alphas_normal = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
-    if self._reduction_flag:
-      self.alphas_reduce = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
+    self.alphas_reduce = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
     if self._reduction_flag:
       self._arch_parameters = [
         self.alphas_normal,
