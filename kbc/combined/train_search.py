@@ -136,18 +136,18 @@ def main():
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
   #TODO force SGD for now, can we change?
-  # optimizer = {
-  #   'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
-  #   'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
-  #   'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
-  # }[args.optimizer]()
+  optimizer = {
+    'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
+    'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
+    'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
+  }[args.optimizer]()
 
-  optimizer = torch.optim.SGD(
-      model.parameters(),
-      args.learning_rate,
-  #TODO can we reintroduce these?
-      momentum=args.momentum,
-      weight_decay=args.weight_decay)
+  # optimizer = torch.optim.SGD(
+  #     model.parameters(),
+  #     args.learning_rate,
+  # #TODO can we reintroduce these?
+  #     momentum=args.momentum,
+  #     weight_decay=args.weight_decay)
 
   #train_transform, valid_transform = utils._data_transforms_cifar10(args)
   #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
