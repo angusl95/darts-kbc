@@ -219,8 +219,8 @@ class Network(KBCModel):
     print('lhs shape', lhs.shape)
 
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.(rank//16)])
-    rel = rel.view([rel.size(0),1,16,self.(rank//16)])
+    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
+    rel = rel.view([rel.size(0),1,16,self.rank//16])
     print('reshaped lhs shape', lhs.shape)
     combined = torch.cat([lhs,rel],3)
     print('combined shape', combined.shape)
