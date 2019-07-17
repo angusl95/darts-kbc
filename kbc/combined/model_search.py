@@ -218,7 +218,11 @@ class Network(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
 
     to_score = self.embeddings[0].weight
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    lhs = lhs.view([lhs.size(0),1,16,self.(rank//16)])
+    rel = rel.view([rel.size(0),1,16,self.(rank//16)])
+    combined = torch.cat([lhs,rel],3)
+    input = combined.view([lhs.size(0),1,32,-1])
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = input
     for i, cell in enumerate(self.cells):
       if cell.reduction:
