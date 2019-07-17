@@ -195,7 +195,11 @@ class Network(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
     
     to_score = self.embeddings[0].weight
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
+    rel = rel.view([rel.size(0),1,16,self.rank//16])
+    combined = torch.cat([lhs,rel],3)
+    input = combined.view([lhs.size(0),1,32,-1])
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
@@ -214,20 +218,15 @@ class Network(KBCModel):
 
   def forward(self, x):
     lhs = self.embeddings[0](x[:, 0])
-    rel = self.embeddings[1](x[:, 1]) + 1000000
+    rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    print('lhs shape', lhs.shape)
+
 
     to_score = self.embeddings[0].weight
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
-    print('reshaped lhs shape', lhs.shape)
     combined = torch.cat([lhs,rel],3)
-    print('combined shape', combined.shape)
     input = combined.view([lhs.size(0),1,32,-1])
-    print('input shape', input.shape)
-    print('1st row', input[0,0,0,:])
-    print('2nd row', input[0,0,1,:])
 
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = input
@@ -253,7 +252,11 @@ class Network(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
+    rel = rel.view([rel.size(0),1,16,self.rank//16])
+    combined = torch.cat([lhs,rel],3)
+    input = combined.view([lhs.size(0),1,32,-1])
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
