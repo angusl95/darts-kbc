@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from abc import ABC, abstractmethod
 from typing import Tuple, List, Dict
 from operations import *
