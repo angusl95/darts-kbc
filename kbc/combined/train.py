@@ -11,6 +11,7 @@ import argparse
 import torch.nn as nn
 import genotypes
 import torch.utils
+import torch.utils.data
 import torch.backends.cudnn as cudnn
 from torch import optim
 from typing import Dict
