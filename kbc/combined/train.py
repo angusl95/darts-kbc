@@ -249,7 +249,7 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
   #actual_examples = examples[torch.randperm(examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
-  with tqdm.tqdm(total=examples.shape[0], unit='ex', disable=not verbose) as bar:
+  with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
       #b_begin = 0
       #while b_begin < examples.shape[0]:
