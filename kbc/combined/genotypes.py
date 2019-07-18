@@ -94,16 +94,16 @@ DARTS = DARTS_V2
 
 KBCNet = Genotype(
   normal = [
-    ('linear', 0),
-    ('linear', 1),
-    ('linear', 0),
-    ('linear', 2),
-    ('linear', 0),
-    ('linear', 3),
-    ('linear', 1),
-    ('linear', 1),
-    ('linear', 0),
-    ('linear', 1),
+    ('sep_conv_3x3', 0),
+    ('skip_connect', 1),
+    ('skip_connect', 0),
+    ('skip_connect', 2),
+    ('skip_connect', 0),
+    ('skip_connect', 3),
+    ('skip_connect', 1),
+    ('skip_connect', 1),
+    ('skip_connect', 0),
+    ('skip_connect', 1),
     ],
   normal_concat = [4, 5, 6],
   reduce = [
