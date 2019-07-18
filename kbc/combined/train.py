@@ -183,7 +183,8 @@ def main():
 
     #print('examples shape')
     #print(examples.shape)
-    train_epoch(examples, model, optimizer, regularizer, args.batch_size)
+    train_epoch(train_examples, train_queue, model, optimizer, 
+      regularizer, args.batch_size)
     valid, test, train = [
             avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
             for split in ['valid', 'test', 'train']
