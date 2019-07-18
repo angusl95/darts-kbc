@@ -126,13 +126,22 @@ class Cell(nn.Module):
 class NetworkKBC(KBCModel):
 
   def __init__(self, C, num_classes, layers, auxiliary, genotype, 
-    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3):
-
+    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
+    reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
+    #TODO: remove stem multiplier from args?
     super(NetworkKBC, self).__init__()
-
-    self.sizes = sizes
+    self._C = C
+    self._num_classes = num_classes
+    self._layers = layers
+    self._criterion = criterion
+    self._regularizer = regularizer
+    self._steps = steps
+    self._multiplier = multiplier
+    self._stem_multiplier = stem_multiplier
     self.rank = rank
-
+    self.sizes = sizes
+    self._init_size = init_size
+    self._reduction_flag = reduction_flag
     self.embeddings = nn.ModuleList([
             nn.Embedding(s, rank, sparse=True)
             for s in sizes[:2]
@@ -140,25 +149,25 @@ class NetworkKBC(KBCModel):
     self.embeddings[0].weight.data *= init_size
     self.embeddings[1].weight.data *= init_size
 
-    self._layers = layers
+    #TODO remove this?
     self._auxiliary = auxiliary
-    #self.A = torch.randn(self.rank, 2*self.rank).cuda()
 
-    stem_multiplier = 3
-    C_curr = stem_multiplier*C
-    self.stem = nn.Sequential(
-      nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
-      nn.BatchNorm2d(C_curr)
-    )
+    C_curr = C
+    # self.stem = nn.Sequential(
+    #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
+    #   nn.BatchNorm2d(C_curr)
+    # )
 
     C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
-    #C_prev_prev, C_prev, C_curr = C, C, C
     self.cells = nn.ModuleList()
     reduction_prev = False
     for i in range(layers):
-      if i in [layers//3, 2*layers//3]:
-        C_curr *= 2
-        reduction = True
+      if self._reduction_flag:
+        if i in [layers//3, 2*layers//3]:
+          C_curr *= 2
+          reduction = True
+        else:
+          reduction = False
       else:
         reduction = False
       cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
@@ -171,8 +180,8 @@ class NetworkKBC(KBCModel):
     # if auxiliary:
     #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(C_prev, self.rank)
-    self.classifier = nn.Linear(C_prev, num_classes)
+    self.projection = nn.Linear(C_prev, self.rank, bias=False)
+    #self.classifier = nn.Linear(C_prev, num_classes)
 
     #old forward method
 
@@ -193,9 +202,12 @@ class NetworkKBC(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
     
     to_score = self.embeddings[0].weight
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = self.stem(input)
-    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
+    rel = rel.view([rel.size(0),1,16,self.rank//16])
+    combined = torch.cat([lhs,rel],3)
+    input = combined.view([lhs.size(0),1,32,-1])
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
@@ -203,6 +215,7 @@ class NetworkKBC(KBCModel):
     out = self.global_pooling(s1)
     #print('out shape after global pooling', out.shape)
     out = self.projection(out.view(out.size(0),-1))
+    out = F.relu(out)
     out = torch.sum(
         out * rhs, 1, keepdim=True
     )
@@ -215,9 +228,12 @@ class NetworkKBC(KBCModel):
     #print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
 
     to_score = self.embeddings[0].weight
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = self.stem(input)
-    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
+    rel = rel.view([rel.size(0),1,16,self.rank//16])
+    combined = torch.cat([lhs,rel],3)
+    input = combined.view([lhs.size(0),1,32,-1])
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)

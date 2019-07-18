@@ -137,12 +137,10 @@ class Network(KBCModel):
     self._steps = steps
     self._multiplier = multiplier
     self._stem_multiplier = stem_multiplier
-
     self.rank = rank
     self.sizes = sizes
     self._init_size = init_size
     self._reduction_flag = reduction_flag
-
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
             nn.Embedding(s, rank)#, sparse=True)

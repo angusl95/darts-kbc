@@ -264,8 +264,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
   loss = nn.CrossEntropyLoss(reduction='mean')
   with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
-      b_begin = 0
-      #TODO: should wejust train for length of validation set in each epoch?
+      #b_begin = 0
       #while b_begin < valid_examples.shape[0]:
       for step, input in enumerate(train_queue):
           ##set current batch
@@ -283,6 +282,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           model.train()
           n = input.size(0)
 
+          #TODO is this okay???
           input = Variable(input, requires_grad=False).cuda()
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
@@ -308,7 +308,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           l.backward()
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
-          b_begin += batch_size
+          #b_begin += batch_size
 
           #progress bar
           bar.update(input.shape[0])

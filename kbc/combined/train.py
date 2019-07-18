@@ -42,6 +42,8 @@ parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=0, help='random seed')
 parser.add_argument('--arch', type=str, default='KBCNet', help='which architecture to use')
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
+parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
+parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument(
@@ -102,7 +104,6 @@ def main():
 
   np.random.seed(args.seed)
   torch.cuda.set_device(args.gpu)
-  #TODO: change back for 1080?
   cudnn.benchmark = True
   torch.manual_seed(args.seed)
   cudnn.enabled=True
@@ -111,13 +112,8 @@ def main():
   logging.info("args = %s", args)
 
   dataset = Dataset(args.dataset)
-  examples = torch.from_numpy(dataset.get_train().astype('int64'))
-
-  # model = {
-  #     'CP': lambda: CP(dataset.get_shape(), args.rank, args.init),
-  #     'ComplEx': lambda: ComplEx(dataset.get_shape(), args.rank, args.init),
-  #     'MLP': lambda: MLP(dataset.get_shape(), args.rank, args.init)
-  # }[args.model]()
+  train_examples = torch.from_numpy(dataset.get_train().astype('int64'))
+  # valid_examples = torch.from_numpy(dataset.get_valid().astype('int64'))
 
   #TODO: does below need reintroducing somewhere?
 
@@ -126,10 +122,13 @@ def main():
 
   CLASSES = dataset.get_shape()[0]
 
+  criterion = nn.CrossEntropyLoss(reduction='mean')
+  criterion = criterion.cuda()
+x
   genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels, #was formerly 2*rank?
+  model = Network(args.init_channels,
     CLASSES, args.layers, args.auxiliary, genotype,
-    dataset.get_shape(), args.rank, args.init)
+    dataset.get_shape(), args.rank, args.init, args.reduction)
   model = model.cuda()
 
   regularizer = {
@@ -145,8 +144,7 @@ def main():
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
-  criterion = nn.CrossEntropyLoss()
-  criterion = criterion.cuda()
+
   #optimizer = torch.optim.SGD(
   #    model.parameters(),
   #    args.learning_rate,
@@ -154,15 +152,17 @@ def main():
       #weight_decay=args.weight_decay
   #    )
 
-  # train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  # train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
-  # valid_data = dset.CIFAR10(root=args.data, train=False, download=True, transform=valid_transform)
-
-  # train_queue = torch.utils.data.DataLoader(
-  #     train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=2)
+  train_queue = torch.utils.data.DataLoader(
+      train_examples, batch_size=args.batch_size,
+      shuffle = True,
+      #sampler=torch.utils.data.sampler.RandomSampler(),
+      pin_memory=True, num_workers=2)
 
   # valid_queue = torch.utils.data.DataLoader(
-  #     valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=2)
+  #     valid_examples, batch_size=args.batch_size,
+  #     shuffle = True,
+  #     #sampler=torch.utils.data.sampler.RandomSampler(),
+  #     pin_memory=True, num_workers=2)
 
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
   best_acc = 0
@@ -170,7 +170,8 @@ def main():
 
   for epoch in range(args.epochs):
     scheduler.step()
-    logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
+    lr = scheduler.get_lr()[0]
+    logging.info('epoch %d lr %e', epoch, lr)
     model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
 
     #train_acc, train_obj = train(train_queue, model, criterion, optimizer)
@@ -242,27 +243,28 @@ def main():
 
 #   return top1.avg, objs.avg
 
-def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer, 
+def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
-  actual_examples = examples[torch.randperm(examples.shape[0]), :]
+  #actual_examples = examples[torch.randperm(examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
   with tqdm.tqdm(total=examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
-      b_begin = 0
-      while b_begin < examples.shape[0]:
+      #b_begin = 0
+      #while b_begin < examples.shape[0]:
+      for step, input in enumerate(train_queue):
           ##set current batch
-          input_batch = actual_examples[
-              b_begin:b_begin + batch_size
-          ].cuda()
+          # input_batch = actual_examples[
+          #     b_begin:b_begin + batch_size
+          # ].cuda()
+
+          input = Variable(input, requires_grad=False).cuda()
+          target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
           #compute predictions, ground truth
-          print('input batch shape', input_batch.shape)
           predictions, factors = model.forward(input_batch)
-          truth = input_batch[:, 2]
+          truth = input[:, 2]
 
           #evaluate loss
-          print('predictions shape', predictions.shape)
-          print('truth shape', truth.shape)
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
@@ -270,11 +272,12 @@ def train_epoch(examples: torch.LongTensor, model, optimizer: optim.Optimizer,
           #optimise
           optimizer.zero_grad()
           l.backward()
+          nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
           b_begin += batch_size
 
           #progress bar
-          bar.update(input_batch.shape[0])
+          bar.update(input.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 
 def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
