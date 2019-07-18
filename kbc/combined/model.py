@@ -125,8 +125,9 @@ class Cell(nn.Module):
 
 class NetworkKBC(KBCModel):
 
-  def __init__(self, C, num_classes, layers, auxiliary, genotype, 
-    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
+  def __init__(self, C, num_classes, layers, criterion, regularizer, 
+    genotype, sizes: Tuple[int, int, int], rank: int, 
+    init_size: float = 1e-3, 
     reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
     #TODO: remove stem multiplier from args?
     super(NetworkKBC, self).__init__()
@@ -148,9 +149,6 @@ class NetworkKBC(KBCModel):
         ])
     self.embeddings[0].weight.data *= init_size
     self.embeddings[1].weight.data *= init_size
-
-    #TODO remove this?
-    self._auxiliary = auxiliary
 
     C_curr = C
     # self.stem = nn.Sequential(

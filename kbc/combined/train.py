@@ -124,17 +124,17 @@ def main():
 
   criterion = nn.CrossEntropyLoss(reduction='mean')
   criterion = criterion.cuda()
-  
-  genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels,
-    CLASSES, args.layers, args.auxiliary, genotype,
-    dataset.get_shape(), args.rank, args.init, args.reduction)
-  model = model.cuda()
 
   regularizer = {
     'N2': N2(args.reg),
     'N3': N3(args.reg),
   }[args.regularizer]
+
+  genotype = eval("genotypes.%s" % args.arch)
+  model = Network(args.init_channels,
+    CLASSES, args.layers, criterion, regularizer, genotype,
+    dataset.get_shape(), args.rank, args.init, args.reduction)
+  model = model.cuda()
 
   optimizer = {
     'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
