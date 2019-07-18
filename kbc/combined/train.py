@@ -256,6 +256,8 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
           # input_batch = actual_examples[
           #     b_begin:b_begin + batch_size
           # ].cuda()
+          model.train()
+          n = input.size(0)
 
           input = Variable(input, requires_grad=False).cuda()
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)

@@ -210,10 +210,8 @@ class NetworkKBC(KBCModel):
     s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
-      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
-    #print('out shape after global pooling', out.shape)
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
     out = torch.sum(
@@ -225,7 +223,6 @@ class NetworkKBC(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    #print('shapes of lhs, rel, rhs:', lhs.shape, rel.shape, rhs.shape)
 
     to_score = self.embeddings[0].weight
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
@@ -236,12 +233,10 @@ class NetworkKBC(KBCModel):
     s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
-      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
-    #print('out shape after global pooling', out.shape)
     out = self.projection(out.view(out.size(0),-1))
-    #f = (self.A @ f).squeeze()
+    out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return (
         out
@@ -257,16 +252,19 @@ class NetworkKBC(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = self.stem(input)
-    #print('start, shapes of s0 and s1:', s0.shape, s1.shape)
+    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
+    rel = rel.view([rel.size(0),1,16,self.rank//16])
+    combined = torch.cat([lhs,rel],3)
+    input = combined.view([lhs.size(0),1,32,-1])
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
+    s0 = s1 = input
 
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
     out = self.global_pooling(s1)
-    #print('out shape after global pooling', out.shape)
     out = self.projection(out.view(out.size(0),-1))
+    out = F.relu(out)
 
     return out
 
