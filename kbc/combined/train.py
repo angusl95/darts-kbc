@@ -265,7 +265,7 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
           #compute predictions, ground truth
-          predictions, factors = model.forward(input_batch)
+          predictions, factors = model.forward(input)
           truth = input[:, 2]
 
           #evaluate loss
@@ -278,7 +278,7 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
           l.backward()
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
-          b_begin += batch_size
+          #b_begin += batch_size
 
           #progress bar
           bar.update(input.shape[0])

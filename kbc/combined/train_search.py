@@ -293,7 +293,6 @@ def train_epoch(train_examples,train_queue, valid_queue,
 
           architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
-
           #compute predictions, ground truth
           predictions, factors = model.forward(input)
           truth = input[:, 2]
