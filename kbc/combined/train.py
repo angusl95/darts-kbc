@@ -28,7 +28,7 @@ parser.add_argument('--batch_size', type=int, default=96, help='batch size')
 parser.add_argument('--learning_rate', type=float, default=0.025, help='init learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
-parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
+parser.add_argument('--report_freq', type=float, default=5, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
 parser.add_argument('--init_channels', type=int, default=36, help='num of init channels')
@@ -185,31 +185,31 @@ def main():
     #print(examples.shape)
     train_epoch(train_examples, train_queue, model, optimizer, 
       regularizer, args.batch_size)
-    valid, test, train = [
-            avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
-            for split in ['valid', 'test', 'train']
-        ]
+    if (epoch + 1) % args.report_freq == 0:
+      valid, test, train = [
+              avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
+              for split in ['valid', 'test', 'train']
+          ]
+      curve['valid'].append(valid)
+      curve['test'].append(test)
+      curve['train'].append(train)
+
+      print("\t TRAIN: ", train)
+      print("\t VALID : ", valid)
+
+      is_best = False
+      if valid['MRR'] > best_acc:
+        best_acc = valid['MRR']
+        is_best = True
+
+      utils.save_checkpoint({
+        'epoch': epoch + 1,
+        'state_dict': model.state_dict(),
+        'best_acc_top1': best_acc,
+        'optimizer' : optimizer.state_dict(),
+        }, is_best, args.save)
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
-
-    curve['valid'].append(valid)
-    curve['test'].append(test)
-    curve['train'].append(train)
-
-    print("\t TRAIN: ", train)
-    print("\t VALID : ", valid)
-
-    is_best = False
-    if valid['MRR'] > best_acc:
-      best_acc = valid['MRR']
-      is_best = True
-
-    utils.save_checkpoint({
-      'epoch': epoch + 1,
-      'state_dict': model.state_dict(),
-      'best_acc_top1': best_acc,
-      'optimizer' : optimizer.state_dict(),
-      }, is_best, args.save)
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
 
