@@ -165,7 +165,9 @@ def main():
   #     #sampler=torch.utils.data.sampler.RandomSampler(),
   #     pin_memory=True, num_workers=2)
 
-  scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(args.epochs))
+  #TODO do we want the learning rate min here?
+  scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+    optimizer, float(args.epochs), eta_min=args.learning_rate_min)
   best_acc = 0
   curve = {'train': [], 'valid': [], 'test': []}
 
