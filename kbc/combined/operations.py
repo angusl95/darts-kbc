@@ -79,7 +79,7 @@ class Conv(nn.Module):
       #nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_out, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
       #nn.BatchNorm2d(C_out, affine=affine),
-      nn.RelU(inplace=False)
+      nn.ReLU(inplace=False)
       )
 
   def forward(self, x):
