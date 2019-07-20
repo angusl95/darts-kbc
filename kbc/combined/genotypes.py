@@ -108,7 +108,7 @@ DARTS = DARTS_V2
 KBCNet = Genotype(
   normal = [
     ('conv_3x3', 0),
-    ('zero', 1)
+    ('none', 1)
     # ('skip_connect', 0),
     # ('skip_connect', 2),
     # ('skip_connect', 0),
