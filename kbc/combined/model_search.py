@@ -310,8 +310,7 @@ class Network(KBCModel):
         for j in edges:
           k_best = None
           for k in range(len(W[j])):
-            #if k != PRIMITIVES.index('none'):
-            if True:
+            if k != PRIMITIVES.index('none'):
               if k_best is None or W[j][k] > W[j][k_best]:
                 k_best = k
           gene.append((PRIMITIVES[k_best], j))
