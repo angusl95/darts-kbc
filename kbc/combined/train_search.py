@@ -36,8 +36,6 @@ parser.add_argument('--epochs', type=int, default=100, help='num of training epo
 parser.add_argument('--init_channels', type=int, default=16, help='num of init channels')
 parser.add_argument('--layers', type=int, default=8, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
-parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
-parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
 parser.add_argument('--drop_path_prob', type=float, default=0.3, help='drop path probability')
 parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=2, help='random seed')
@@ -153,14 +151,9 @@ def main():
   #     momentum=args.momentum,
   #     weight_decay=args.weight_decay)
 
-  #train_transform, valid_transform = utils._data_transforms_cifar10(args)
-  #train_data = dset.CIFAR10(root=args.data, train=True, download=True, transform=train_transform)
-
   #num_train = len(train_data)
   #indices = list(range(num_train))
   #split = int(np.floor(args.train_portion * num_train))
-
-  #TODO use queues?
 
   train_queue = torch.utils.data.DataLoader(
       train_examples, batch_size=args.batch_size,

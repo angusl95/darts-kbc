@@ -78,8 +78,9 @@ class MixedOp(nn.Module):
     self._ops = nn.ModuleList()
     for primitive in PRIMITIVES:
       op = OPS[primitive](C, stride, False)
-      if 'pool' in primitive:
-        op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
+      #TODO reintroduce this?
+      #if 'pool' in primitive:
+      #  op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
       self._ops.append(op)
 
   def forward(self, x, weights):
@@ -173,7 +174,7 @@ class Network(KBCModel):
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
-    self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    #self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(C_prev, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
@@ -206,7 +207,8 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+    #out = self.global_pooling(s1)
+    out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
     out = torch.sum(
@@ -234,9 +236,10 @@ class Network(KBCModel):
       else:
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+    #out = self.global_pooling(s1)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
+    out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
@@ -263,7 +266,8 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+    #out = self.global_pooling(s1)
+    out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
 
