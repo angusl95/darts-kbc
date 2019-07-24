@@ -174,7 +174,7 @@ class Network(KBCModel):
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
-    #self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(C_prev, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
@@ -207,7 +207,7 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    #out = self.global_pooling(s1)
+    out = self.global_pooling(s1)
     out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
@@ -236,7 +236,7 @@ class Network(KBCModel):
       else:
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    #out = self.global_pooling(s1)
+    out = self.global_pooling(s1)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
     out = s1
@@ -266,7 +266,7 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    #out = self.global_pooling(s1)
+    out = self.global_pooling(s1)
     out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
@@ -280,7 +280,6 @@ class Network(KBCModel):
     l_reg = self._regularizer.forward(factors)
     #return self._criterion(logits, target) 
     return l_fit + l_reg
-
 
   def _initialize_alphas(self):
     k = sum(1 for i in range(self._steps) for n in range(2+i))
