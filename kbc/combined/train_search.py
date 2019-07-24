@@ -137,9 +137,9 @@ def main():
   optimizer = {
     'Adagrad': lambda: optim.Adagrad(
       model.parameters(), 
-      lr=args.learning_rate,
+      lr=args.learning_rate),
       #momentum=args.momentum,
-      weight_decay=args.weight_decay),
+      #weight_decay=args.weight_decay)
     'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
     'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
   }[args.optimizer]()
