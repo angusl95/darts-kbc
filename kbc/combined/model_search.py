@@ -208,7 +208,7 @@ class Network(KBCModel):
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
     out = self.global_pooling(s1)
-    out = s1
+    #out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
     out = torch.sum(
@@ -239,7 +239,6 @@ class Network(KBCModel):
     out = self.global_pooling(s1)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
-    out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
@@ -267,7 +266,7 @@ class Network(KBCModel):
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
     out = self.global_pooling(s1)
-    out = s1
+    #out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
 
