@@ -144,7 +144,7 @@ class Network(KBCModel):
     self._reduction_flag = reduction_flag
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
-            nn.Embedding(s, rank, sparse=True)
+            nn.Embedding(s, rank)#, sparse=True)
             for s in sizes[:2]
         ])
     self.embeddings[0].weight.data *= init_size
