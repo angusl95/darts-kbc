@@ -145,7 +145,24 @@ KBCNet = Genotype(
   reduce_concat = [3, 4, 6]
 )
 
-
+TestNet = Genotype(
+    normal=[
+        ('none', 0), 
+        ('none', 1), 
+        ('none', 2), 
+        ('none', 0), 
+        ('conv_7x7', 2), 
+        ('none', 3)], 
+        normal_concat=range(1, 5), 
+        reduce=[('conv_3x3', 0), 
+        ('avg_pool_3x3', 1), 
+        ('skip_connect', 1), 
+        ('conv_5x5', 2), 
+        ('avg_pool_3x3', 2), 
+        ('conv_7x7', 0)
+    ], 
+    reduce_concat=range(1, 5)
+)
 
 
 
