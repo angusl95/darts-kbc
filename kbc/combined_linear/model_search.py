@@ -236,7 +236,6 @@ class Network(KBCModel):
 
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
-    print('input shape', s0.shape)
     for i, cell in enumerate(self.cells):
       if cell.reduction:
         weights = F.softmax(self.alphas_reduce, dim=-1)
@@ -244,7 +243,6 @@ class Network(KBCModel):
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     #out = self.global_pooling(s0)
-    print('shape after cell', s0.shape)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
     out = s0.view(s0.size(0),1, -1)
