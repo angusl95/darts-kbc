@@ -180,7 +180,8 @@ class Network(KBCModel):
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(C_prev, self.rank, bias=False)
+    self.projection = nn.Linear(2 * self.rank, self.rank, bias=False)
+    #self.projection = nn.Linear(C_prev, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
     self._initialize_alphas()
