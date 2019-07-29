@@ -120,7 +120,7 @@ class Cell(nn.Module):
     print('ops len', len(self._ops))
     print('weights shape', weights.shape)
     for i in range(self._steps):
-      s0 = self._ops(s0, weights[i])
+      s0 = self._ops[i](s0, weights[i])
       #s = sum(self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
       #offset += len(states)
       #states.append(s)
