@@ -117,8 +117,6 @@ class Cell(nn.Module):
 
     #states = [s0]
     #offset = 0
-    print('ops len', len(self._ops))
-    print('weights shape', weights.shape)
     for i in range(self._steps):
       s0 = self._ops[i](s0, weights[i])
       #s = sum(self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
@@ -315,8 +313,6 @@ class Network(KBCModel):
       #n = 2
       n = 1
       start = 0
-      print('weights shape', weights.shape)
-      print('num steps', self._steps)
       for i in range(self._steps):
         # end = start + n
         # W = weights[start:end].copy()
