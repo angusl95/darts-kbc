@@ -125,7 +125,7 @@ class Cell(nn.Module):
       s = h1 # + h2
       states += [s]
     #return torch.cat([states[i] for i in self._concat], dim=1)
-    return states[steps]
+    return states[self._steps]
 
 class NetworkKBC(KBCModel):
 
