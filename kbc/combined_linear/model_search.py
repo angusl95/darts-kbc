@@ -234,7 +234,8 @@ class Network(KBCModel):
     input = combined.view([lhs.size(0),1,32,-1])
 
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = input
+    s0 = input
+    print('input shape', s0.shape)
     for i, cell in enumerate(self.cells):
       if cell.reduction:
         weights = F.softmax(self.alphas_reduce, dim=-1)
@@ -242,9 +243,11 @@ class Network(KBCModel):
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     out = self.global_pooling(s0)
+    print('shape after cell', s0.shape)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
     out = self.projection(out.view(out.size(0),-1))
+    print('shape after projection', s0.shape)
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
@@ -263,19 +266,15 @@ class Network(KBCModel):
     input = combined.view([lhs.size(0),1,32,-1])
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
-    print('input shape', s0.shape)
     for i, cell in enumerate(self.cells):
       if cell.reduction:
           weights = F.softmax(self.alphas_reduce, dim=-1)
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
-    print('shape after cell', s0.shape)
     out = self.global_pooling(s0)
-    print('shape after pooling', s0.shape)
     #out = s1
     out = self.projection(out.view(out.size(0),-1))
-    print('shape after projection', s0.shape)
     out = F.relu(out)
 
     return out
