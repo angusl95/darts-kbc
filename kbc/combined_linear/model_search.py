@@ -308,6 +308,8 @@ class Network(KBCModel):
       #n = 2
       n = 1
       start = 0
+      print('weights shape', weights.shape)
+      print('num steps', self._steps)
       for i in range(self._steps):
         # end = start + n
         # W = weights[start:end].copy()
@@ -320,7 +322,7 @@ class Network(KBCModel):
         #       if k_best is None or W[j][k] > W[j][k_best]:
         #         k_best = k
         W = weights.copy()
-        k_best = torch.argmax(W[i][k] for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
+        k_best = torch.argmax(W[i,:]) #for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
         gene.append((PRIMITIVES[k_best], j))
         #start = end
         #n += 1
