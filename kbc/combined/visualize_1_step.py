@@ -13,27 +13,26 @@ def plot(genotype, filename):
 
   g.node("c_{k-2}", fillcolor='darkseagreen2')
   g.node("c_{k-1}", fillcolor='darkseagreen2')
-  assert len(genotype) % 2 == 0
-  steps = len(genotype) // 2
+  #assert len(genotype) % 2 == 0
+  #steps = len(genotype) // 2
+  steps = len(genotype)
 
   for i in range(steps):
     g.node(str(i), fillcolor='lightblue')
 
   for i in range(steps):
-    for k in [2*i, 2*i + 1]:
-      op, j = genotype[k]
+      op, j = genotype[i]
       if j == 0:
-        u = "c_{k-2}"
-      elif j == 1:
         u = "c_{k-1}"
       else:
-        u = str(j-2)
+        u = str(j-1)
       v = str(i)
       g.edge(u, v, label=op, fillcolor="gray")
 
-  g.node("c_{k}", fillcolor='palegoldenrod')
-  for i in range(steps):
-    g.edge(str(i), "c_{k}", fillcolor="gray")
+  g.node("c_{i}", fillcolor='palegoldenrod')
+  #for i in range(steps):
+  #  g.edge(str(i), "c_{i}", fillcolor="gray")
+  g.edge(str(steps-1), "c_{i}", fillcolor="gray")
 
   g.render(filename, view=True)
 

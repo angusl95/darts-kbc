@@ -145,25 +145,29 @@ KBCNet = Genotype(
   reduce_concat = [3, 4, 6]
 )
 
-TestNet = Genotype(
-    normal=[
-        ('none', 0), 
-        ('none', 1), 
-        ('none', 2), 
-        ('none', 0), 
-        ('conv_7x7', 2), 
-        ('none', 3)], 
-        normal_concat=range(1, 5), 
-        reduce=[('conv_3x3', 0), 
-        ('avg_pool_3x3', 1), 
-        ('skip_connect', 1), 
-        ('conv_5x5', 2), 
-        ('avg_pool_3x3', 2), 
-        ('conv_7x7', 0)
-    ], 
-    reduce_concat=range(1, 5)
-)
+TestNet = Genotype(normal=[('none', 1), ('none', 0), ('none', 1), ('none', 0), ('conv_5x5', 2), ('conv_7x7', 0), ('conv_7x7', 4), ('conv_7x7', 2)], normal_concat=range(2, 6), reduce=[('max_pool_3x3', 1), ('skip_connect', 0), ('skip_connect', 1), ('conv_5x5', 2), ('max_pool_3x3', 0), ('avg_pool_3x3', 1), ('skip_connect', 0), ('avg_pool_3x3', 4)], reduce_concat=range(2, 6))
 
+ConvE = Genotype(
+    normal = [
+        ('skip_connect', 0),
+    ('skip_connect', 1),
+    ('skip_connect', 2),
+    ('conv_3x3', 3)],
+    normal_concat = [3],
+  reduce = [
+    ('avg_pool_3x3', 0),
+    ('sep_conv_3x3', 1),
+    ('max_pool_3x3', 0),
+    ('sep_conv_7x7', 2),
+    ('sep_conv_7x7', 0),
+    ('avg_pool_3x3', 1),
+    ('max_pool_3x3', 0),
+    ('max_pool_3x3', 1),
+    ('conv_7x1_1x7', 0),
+    ('sep_conv_3x3', 5),
+  ],
+  reduce_concat = [3, 4, 6]
+    )
 
 
 

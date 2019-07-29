@@ -106,6 +106,15 @@ class Zero(nn.Module):
       return x.mul(0.)
     return x[:,:,::self.stride,::self.stride].mul(0.)
 
+class Linear(nn.Module):
+
+  def __init__(self)
+    super(Linear, self).__init__()
+
+  def forward(self, x):
+    self.shape = x.shape
+    x = x.flatten()
+
 
 class FactorizedReduce(nn.Module):
 
