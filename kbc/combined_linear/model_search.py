@@ -309,18 +309,19 @@ class Network(KBCModel):
       n = 1
       start = 0
       for i in range(self._steps):
-        end = start + n
-        W = weights[start:end].copy()
-        edges = sorted(range(i + 1), key=lambda x: -max(W[x][k] for k in range(len(W[x])) if k != PRIMITIVES.index('none')))[:1]
-        for j in edges:
-          k_best = None
-          for k in range(len(W[j])):
-            #if k != PRIMITIVES.index('none'):
-            if True:
-              if k_best is None or W[j][k] > W[j][k_best]:
-                k_best = k
-          gene.append((PRIMITIVES[k_best], j))
-        start = end
+        # end = start + n
+        # W = weights[start:end].copy()
+        # edges = sorted(range(i + 1), key=lambda x: -max(W[x][k] for k in range(len(W[x])) if k != PRIMITIVES.index('none')))[:1]
+        # for j in edges:
+        #   k_best = None
+        #   for k in range(len(W[j])):
+        #     #if k != PRIMITIVES.index('none'):
+        #     if True:
+        #       if k_best is None or W[j][k] > W[j][k_best]:
+        #         k_best = k
+        k_best = max(W[i][k] for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
+        gene.append((PRIMITIVES[k_best], j))
+        #start = end
         #n += 1
       return gene
 
