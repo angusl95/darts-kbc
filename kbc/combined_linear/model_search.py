@@ -213,10 +213,10 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
-    out = self.global_pooling(s0)
-    #out = s1
-    out = self.projection(out.view(out.size(0),-1))
+    out = s0.view(s0.size(0),1, -1)
+    out = self.projection(out)
     out = F.relu(out)
+    out = out.squeeze()
     out = torch.sum(
         out * rhs, 1, keepdim=True
     )
@@ -243,16 +243,14 @@ class Network(KBCModel):
       else:
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
-    out = self.global_pooling(s0)
+    #out = self.global_pooling(s0)
     print('shape after cell', s0.shape)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
-    batch_size = x.size(0)
-    out = out.view(batch_size, -1)
-    print('view shape', out.shape)
+    out = s0.view(s0.size(0),1, -1)
     out = self.projection(out)
-    print('shape after projection', s0.shape)
     out = F.relu(out)
+    out = out.squeeze()
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
 
@@ -276,10 +274,11 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
-    out = self.global_pooling(s0)
-    #out = s1
-    out = self.projection(out.view([out.size(0),-1]))
+    #out = self.global_pooling(s0)
+    out = s0.view(s0.size(0),1, -1)
+    out = self.projection(out)
     out = F.relu(out)
+    out = out.squeeze()
 
     return out
 
