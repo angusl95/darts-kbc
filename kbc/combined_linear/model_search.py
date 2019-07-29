@@ -283,7 +283,8 @@ class Network(KBCModel):
     return l_fit + l_reg
 
   def _initialize_alphas(self):
-    k = sum(1 for i in range(self._steps) for n in range(1+i))
+    #k = sum(1 for i in range(self._steps) for n in range(1+i))
+    k = self._steps
     num_ops = len(PRIMITIVES)
 
     self.alphas_normal = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
@@ -322,7 +323,13 @@ class Network(KBCModel):
         #       if k_best is None or W[j][k] > W[j][k_best]:
         #         k_best = k
         W = weights.copy()
-        k_best = torch.argmax(W[i,:]) #for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
+        #k_best = torch.argmax(W[i,:]) #for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
+        k_best = None
+        for k in range(len(W[i])):
+          if k != PRIMITIVES.index('none'):
+        #     if True:
+            if k_best is None or W[j][k] > W[j][k_best]:
+              k_best = k
         gene.append((PRIMITIVES[k_best], j))
         #start = end
         #n += 1
