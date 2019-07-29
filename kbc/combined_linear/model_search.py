@@ -247,7 +247,10 @@ class Network(KBCModel):
     print('shape after cell', s0.shape)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
-    out = self.projection(out.view([out.size(0),-1]))
+    batch_size = x.size(0)
+    out = out.view(batch_size, -1)
+    print('view shape', out.shape)
+    out = self.projection(out)
     print('shape after projection', s0.shape)
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
