@@ -115,15 +115,18 @@ class Cell(nn.Module):
     # s0 = self.preprocess0(s0)
     # s1 = self.preprocess1(s1)
 
-    states = [s0]
-    offset = 0
+    #states = [s0]
+    #offset = 0
+    print('ops shape', self._ops.shape)
+    print('weights shape', weights.shape)
     for i in range(self._steps):
-      s = sum(self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
-      offset += len(states)
-      states.append(s)
+      s0 = self._ops(s0, weights[i])
+      #s = sum(self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
+      #offset += len(states)
+      #states.append(s)
 
-    return torch.cat(states[-self._multiplier:], dim=1)
-
+    #return torch.cat(states[-self._multiplier:], dim=1)
+    return s0
 
 class Network(KBCModel):
 
