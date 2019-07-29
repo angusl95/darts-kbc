@@ -104,16 +104,18 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     self._bns = nn.ModuleList()
     for i in range(self._steps):
-      for j in range(2+i):
-        stride = 2 if reduction and j < 2 else 1
+      #for j in range(2+i):
+      for j in range(1)
+        #stride = 2 if reduction and j < 2 else 1
+        stride = 1
         op = MixedOp(C, stride)
         self._ops.append(op)
 
-  def forward(self, s0, s1, weights):
+  def forward(self, s0, weights):
     # s0 = self.preprocess0(s0)
     # s1 = self.preprocess1(s1)
 
-    states = [s0, s1]
+    states = [s0]
     offset = 0
     for i in range(self._steps):
       s = sum(self._ops[offset+j](h, weights[offset+j]) for j, h in enumerate(states))
@@ -206,8 +208,8 @@ class Network(KBCModel):
           weights = F.softmax(self.alphas_reduce, dim=-1)
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
-      s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+      s0 = cell(s0, weights)
+    out = self.global_pooling(s0)
     #out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
@@ -235,8 +237,8 @@ class Network(KBCModel):
         weights = F.softmax(self.alphas_reduce, dim=-1)
       else:
         weights = F.softmax(self.alphas_normal, dim=-1)
-      s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+      s0 = cell(s0, weights)
+    out = self.global_pooling(s0)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
     out = self.projection(out.view(out.size(0),-1))
@@ -257,15 +259,15 @@ class Network(KBCModel):
     combined = torch.cat([lhs,rel],3)
     input = combined.view([lhs.size(0),1,32,-1])
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = input
+    s0 = input
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
           weights = F.softmax(self.alphas_reduce, dim=-1)
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
-      s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+      s0 = cell(s0, weights)
+    out = self.global_pooling(s0)
     #out = s1
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
@@ -281,7 +283,7 @@ class Network(KBCModel):
     return l_fit + l_reg
 
   def _initialize_alphas(self):
-    k = sum(1 for i in range(self._steps) for n in range(2+i))
+    k = sum(1 for i in range(self._steps) for n in range(1+i))
     num_ops = len(PRIMITIVES)
 
     self.alphas_normal = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
@@ -303,12 +305,13 @@ class Network(KBCModel):
 
     def _parse(weights):
       gene = []
-      n = 2
+      #n = 2
+      n = 1
       start = 0
       for i in range(self._steps):
         end = start + n
         W = weights[start:end].copy()
-        edges = sorted(range(i + 2), key=lambda x: -max(W[x][k] for k in range(len(W[x])) if k != PRIMITIVES.index('none')))[:2]
+        edges = sorted(range(i + 1), key=lambda x: -max(W[x][k] for k in range(len(W[x])) if k != PRIMITIVES.index('none')))[:2]
         for j in edges:
           k_best = None
           for k in range(len(W[j])):
@@ -318,13 +321,14 @@ class Network(KBCModel):
                 k_best = k
           gene.append((PRIMITIVES[k_best], j))
         start = end
-        n += 1
+        #n += 1
       return gene
 
     gene_normal = _parse(F.softmax(self.alphas_normal, dim=-1).data.cpu().numpy())
     gene_reduce = _parse(F.softmax(self.alphas_reduce, dim=-1).data.cpu().numpy())
 
-    concat = range(2+self._steps-self._multiplier, self._steps+2)
+    #concat = range(2+self._steps-self._multiplier, self._steps+2)
+    concat = [self._steps]
     genotype = Genotype(
       normal=gene_normal, normal_concat=concat,
       reduce=gene_reduce, reduce_concat=concat
