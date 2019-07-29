@@ -117,7 +117,7 @@ class Cell(nn.Module):
 
     #states = [s0]
     #offset = 0
-    print('ops shape', self._ops.shape)
+    print('ops len', len(self._ops)
     print('weights shape', weights.shape)
     for i in range(self._steps):
       s0 = self._ops(s0, weights[i])
