@@ -320,7 +320,7 @@ class Network(KBCModel):
         #       if k_best is None or W[j][k] > W[j][k_best]:
         #         k_best = k
         W = weights.copy()
-        k_best = np.argmax(W[i][k] for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
+        k_best = torch.argmax(W[i][k] for k in range(len(W[i])) if k!= PRIMITIVES.index('none'))
         gene.append((PRIMITIVES[k_best], j))
         #start = end
         #n += 1
