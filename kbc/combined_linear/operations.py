@@ -99,12 +99,15 @@ class LinearOp(nn.Module):
 
   def __init__(self, rank):
     super(LinearOp, self).__init__()
-    self.op = nn.Sequential(nn.Linear(2*rank,2*rank))
+    self.op = nn.Sequential(
+      nn.Linear(2*rank,2*rank),
+      nn.ReLU(inplace=False)
+      )
 
   def forward(self, x):
     x = x.view([x.size(0),1,-1])
     x = self.op(x)
-    x = view([x.size(0),1,32,-1])
+    x = x.view([x.size(0),1,32,-1])
     return x
 
 
