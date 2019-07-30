@@ -206,7 +206,8 @@ def main():
       curve['train'].append(train)
 
       print("\t TRAIN: ", train)
-      print("\t VALID : ", valid)
+      print("\t VALID: ", valid)
+      print("\t TEST: ", test)
 
       is_best = False
       if valid['MRR'] > best_acc:
