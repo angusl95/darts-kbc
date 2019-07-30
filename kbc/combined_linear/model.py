@@ -213,7 +213,8 @@ class NetworkKBC(KBCModel):
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
-    out = self.global_pooling(s0)
+    out = s0
+    #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
     out = torch.sum(
@@ -236,11 +237,9 @@ class NetworkKBC(KBCModel):
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
-    print('shape after cell', s0.shape)
     out = s0
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
-    print('shape after projection', out.shape)
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return (
@@ -267,7 +266,8 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0 = cell(s0, self.drop_path_prob)
-    out = self.global_pooling(s0)
+    out = s0
+    #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
 
