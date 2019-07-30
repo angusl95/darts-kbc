@@ -60,9 +60,9 @@ KBCNet = Genotype(
 TestNet = Genotype(
     normal = [
     ('conv_3x3', 0),
-    ('skip_connect', 1),
-    ('skip_connect', 2),
-    ('skip_connect', 3)
+    ('identity', 1),
+    ('identity', 2),
+    ('identity', 3)
     # ('skip_connect', 0),
     # ('skip_connect', 2),
     # ('skip_connect', 0),
