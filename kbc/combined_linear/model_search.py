@@ -73,11 +73,11 @@ class KBCModel(nn.Module, ABC):
 
 class MixedOp(nn.Module):
 
-  def __init__(self, C, stride):
+  def __init__(self, C, stride, rank):
     super(MixedOp, self).__init__()
     self._ops = nn.ModuleList()
     for primitive in PRIMITIVES:
-      op = OPS[primitive](C, stride, False)
+      op = OPS[primitive](C, stride, rank, False)
       #TODO reintroduce this?
       #if 'pool' in primitive:
       #  op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
@@ -89,7 +89,7 @@ class MixedOp(nn.Module):
 
 class Cell(nn.Module):
 
-  def __init__(self, steps, multiplier, C_prev_prev, C_prev, C, reduction, reduction_prev):
+  def __init__(self, steps, rank, multiplier, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
     self.reduction = reduction
 
@@ -100,6 +100,7 @@ class Cell(nn.Module):
     # self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
     self._steps = steps
     self._multiplier = multiplier
+    self._rank = rank
 
     self._ops = nn.ModuleList()
     self._bns = nn.ModuleList()
@@ -108,7 +109,7 @@ class Cell(nn.Module):
       for j in range(1):
         #stride = 2 if reduction and j < 2 else 1
         stride = 1
-        op = MixedOp(C, stride)
+        op = MixedOp(C, stride, rank)
         self._ops.append(op)
 
   def forward(self, s0, weights):
@@ -172,7 +173,7 @@ class Network(KBCModel):
           reduction = False
       else:
         reduction = False
-      cell = Cell(steps, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
+      cell = Cell(steps, self.rank, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr

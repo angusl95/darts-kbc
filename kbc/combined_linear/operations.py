@@ -2,27 +2,27 @@ import torch
 import torch.nn as nn
 
 OPS = {
-  'none' : lambda C, stride, affine: Zero(stride),
-  'avg_pool_3x3' : lambda C, stride, affine: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
-  'max_pool_3x3' : lambda C, stride, affine: nn.MaxPool2d(3, stride=stride, padding=1),
-  'identity' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
-  'sep_conv_3x3' : lambda C, stride, affine: SepConv(C, C, 3, stride, 1, affine=affine),
-  'sep_conv_5x5' : lambda C, stride, affine: SepConv(C, C, 5, stride, 2, affine=affine),
-  'sep_conv_7x7' : lambda C, stride, affine: SepConv(C, C, 7, stride, 3, affine=affine),
-  'dil_conv_3x3' : lambda C, stride, affine: DilConv(C, C, 3, stride, 2, 2, affine=affine),
-  'dil_conv_5x5' : lambda C, stride, affine: DilConv(C, C, 5, stride, 4, 2, affine=affine),
-  'conv_3x3'     : lambda C, stride, affine: Conv(C, C, 3, stride, 1, affine=affine),
-  'conv_5x5'     : lambda C, stride, affine: Conv(C, C, 5, stride, 2, affine=affine),
-  'conv_7x7'     : lambda C, stride, affine: Conv(C, C, 7, stride, 3, affine=affine),
-  'conv_7x1_1x7' : lambda C, stride, affine: nn.Sequential(
+  'none' : lambda C, stride, rank, affine: Zero(stride),
+  'avg_pool_3x3' : lambda C, stride, rank, affine: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
+  'max_pool_3x3' : lambda C, stride, rank, affine: nn.MaxPool2d(3, stride=stride, padding=1),
+  'identity' : lambda C, stride, rank ,affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
+  'sep_conv_3x3' : lambda C, stride, rank, affine: SepConv(C, C, 3, stride, 1, affine=affine),
+  'sep_conv_5x5' : lambda C, stride, rank, affine: SepConv(C, C, 5, stride, 2, affine=affine),
+  'sep_conv_7x7' : lambda C, stride, rank, affine: SepConv(C, C, 7, stride, 3, affine=affine),
+  'dil_conv_3x3' : lambda C, stride, rank, affine: DilConv(C, C, 3, stride, 2, 2, affine=affine),
+  'dil_conv_5x5' : lambda C, stride, rank, affine: DilConv(C, C, 5, stride, 4, 2, affine=affine),
+  'conv_3x3'     : lambda C, stride, rank, affine: Conv(C, C, 3, stride, 1, affine=affine),
+  'conv_5x5'     : lambda C, stride, rank, affine: Conv(C, C, 5, stride, 2, affine=affine),
+  'conv_7x7'     : lambda C, stride, rank, affine: Conv(C, C, 7, stride, 3, affine=affine),
+  'conv_7x1_1x7' : lambda C, stride, rank, affine: nn.Sequential(
     nn.ReLU(inplace=False),
     nn.Conv2d(C, C, (1,7), stride=(1, stride), padding=(0, 3), bias=False),
     nn.Conv2d(C, C, (7,1), stride=(stride, 1), padding=(3, 0), bias=False),
     nn.BatchNorm2d(C, affine=affine)
     ),
-  'linear' : lambda C, stride, affine: nn.Linear(C, C),
-  'identity' : lambda C, stride, affine: Identity()
-}
+  'linear' : lambda C, stride, rank, affine: LinearOp(rank),
+  'identity' : lambda C, stride, rank, affine: Identity()
+} 
 
 class ReLUConvBN(nn.Module):
 
@@ -94,6 +94,19 @@ class Identity(nn.Module):
 
   def forward(self, x):
     return x
+
+class LinearOp(nn.Module):
+
+  def __init__(self, rank):
+    super(LinearOp, self).__init__()
+    self.op = nn.Sequential(nn.Linear(2*rank,2*rank))
+
+  def forward(self, x):
+    x = x.view([x.size(0),1,-1])
+    x = self.op(x)
+    x = view([x.size(0),1,32,-1])
+    return x
+
 
 
 class Zero(nn.Module):

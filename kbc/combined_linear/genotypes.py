@@ -24,7 +24,8 @@ PRIMITIVES = [
     'conv_5x5',
     'conv_7x7',
     'dil_conv_3x3',
-    'dil_conv_5x5'
+    'dil_conv_5x5',
+    'linear'
 ]
 
 KBCNet = Genotype(
