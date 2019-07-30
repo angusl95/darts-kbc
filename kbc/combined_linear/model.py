@@ -82,12 +82,12 @@ class Cell(nn.Module):
     #  self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0)
     #self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0)
     
-    if reduction:
-      op_names, indices = zip(*genotype.reduce)
-      concat = genotype.reduce_concat
-    else:
-      op_names, indices = zip(*genotype.normal)
-      concat = genotype.normal_concat
+    #if reduction:
+    #  op_names, indices = zip(*genotype.reduce)
+    #  concat = genotype.reduce_concat
+    #else:
+    op_names, indices = zip(*genotype.normal)
+    concat = genotype.normal_concat
     self._compile(C, op_names, indices, concat, reduction)
 
   def _compile(self, C, op_names, indices, concat, reduction):
