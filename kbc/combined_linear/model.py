@@ -182,7 +182,7 @@ class NetworkKBC(KBCModel):
     # if auxiliary:
     #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(C_prev, self.rank, bias=False)
+    self.projection = nn.Linear(self.rank*2, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
     #old forward method
@@ -236,11 +236,11 @@ class NetworkKBC(KBCModel):
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
-    print('shape after cell', s0)
+    print('shape after cell', s0).shape
     out = s0
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
-    print('shape after projection', out)
+    print('shape after projection', out).shape
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return (
