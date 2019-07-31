@@ -88,6 +88,7 @@ class Cell(nn.Module):
     #else:
     op_names, indices = zip(*genotype.normal)
     concat = genotype.normal_concat
+    self._rank = rank
     self._compile(C, op_names, indices, concat, reduction)
 
   def _compile(self, C, op_names, indices, concat, reduction):
@@ -99,7 +100,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
       stride = 2 if reduction and index < 2 else 1
-      op = OPS[name](C, stride,rank, True)
+      op = OPS[name](C, stride,self._rank, True)
       self._ops += [op]
     self._indices = indices
 
