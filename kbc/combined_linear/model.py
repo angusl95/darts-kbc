@@ -172,7 +172,7 @@ class NetworkKBC(KBCModel):
           reduction = False
       else:
         reduction = False
-      cell = Cell(genotype, self.rank C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
+      cell = Cell(genotype, self.rank, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
