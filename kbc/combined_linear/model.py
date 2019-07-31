@@ -73,7 +73,7 @@ class KBCModel(nn.Module, ABC):
 
 class Cell(nn.Module):
 
-  def __init__(self, genotype,  C_prev_prev, C_prev, C, reduction, reduction_prev):
+  def __init__(self, genotype, rank, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
 
     #if reduction_prev:
@@ -99,7 +99,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
       stride = 2 if reduction and index < 2 else 1
-      op = OPS[name](C, stride, True)
+      op = OPS[name](C, stride,rank, True)
       self._ops += [op]
     self._indices = indices
 
@@ -172,7 +172,7 @@ class NetworkKBC(KBCModel):
           reduction = False
       else:
         reduction = False
-      cell = Cell(genotype, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
+      cell = Cell(genotype, self.rank C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
