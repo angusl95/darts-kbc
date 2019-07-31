@@ -78,9 +78,10 @@ class Conv(nn.Module):
     super(Conv, self).__init__()
     self.op = nn.Sequential(
       #nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_out, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
-      nn.BatchNorm2d(C_out, affine=affine),
-      nn.ReLU(inplace=False)
+      nn.Conv2d(C_in, 32, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
+      nn.BatchNorm2d(32, affine=affine),
+      nn.ReLU(inplace=False),
+      nn.Dropout2d(p=0.2)
       )
 
   def forward(self, x):

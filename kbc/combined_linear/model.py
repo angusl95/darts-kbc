@@ -183,7 +183,8 @@ class NetworkKBC(KBCModel):
     # if auxiliary:
     #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(self.rank*2, self.rank, bias=False)
+    self.projection = nn.Linear(self.rank*2*32, self.rank, bias=False)
+
     self.output_bn = nn.BatchNorm1d(self.rank)
     self.output_drop = torch.nn.Dropout(p=0.3)
     #self.classifier = nn.Linear(C_prev, num_classes)
