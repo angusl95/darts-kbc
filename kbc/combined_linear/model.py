@@ -219,8 +219,8 @@ class NetworkKBC(KBCModel):
     out = s0
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
-    out = output_drop(out)
-    out = output_bn(out)
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = torch.sum(
         out * rhs, 1, keepdim=True
@@ -245,6 +245,8 @@ class NetworkKBC(KBCModel):
     out = s0
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return (
@@ -274,6 +276,8 @@ class NetworkKBC(KBCModel):
     out = s0
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
 
     return out
