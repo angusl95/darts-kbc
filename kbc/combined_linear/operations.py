@@ -45,8 +45,8 @@ class DilConv(nn.Module):
       #nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
-      nn.ReLU(inplace=False)
-      #nn.BatchNorm2d(C_out, affine=affine),
+      nn.BatchNorm2d(C_out, affine=affine),
+      nn.ReLU(inplace=False),
       )
 
   def forward(self, x):
@@ -58,7 +58,6 @@ class SepConv(nn.Module):
   def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=True):
     super(SepConv, self).__init__()
     self.op = nn.Sequential(
-      nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_in, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_in, affine=affine),
@@ -66,6 +65,7 @@ class SepConv(nn.Module):
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=1, padding=padding, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
+      nn.ReLU(inplace=False)
       )
 
   def forward(self, x):
@@ -79,7 +79,7 @@ class Conv(nn.Module):
     self.op = nn.Sequential(
       #nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_out, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
-      #nn.BatchNorm2d(C_out, affine=affine),
+      nn.BatchNorm2d(C_out, affine=affine),
       nn.ReLU(inplace=False)
       )
 
