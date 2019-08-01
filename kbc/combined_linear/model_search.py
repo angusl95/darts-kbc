@@ -179,7 +179,7 @@ class Network(KBCModel):
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
     self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(2 * self.rank, self.rank, bias=False)
+    self.projection = nn.Linear(2*self.rank*self._C, self.rank, bias=False)
     #self.projection = nn.Linear(C_prev, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
@@ -202,7 +202,7 @@ class Network(KBCModel):
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
     combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
+    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = s1 = input
 
@@ -231,7 +231,7 @@ class Network(KBCModel):
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
     combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
+    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
 
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
@@ -262,7 +262,7 @@ class Network(KBCModel):
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
     combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
+    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
     for i, cell in enumerate(self.cells):
