@@ -108,13 +108,9 @@ class LinearOp(nn.Module):
     self.bn = nn.BatchNorm2d(C, affine=affine)
 
   def forward(self, x):
-    print('x size before view', x.shape)
     x = x.contiguous().view([x.size(0),1,-1])
-    print('x size after input view', x.shape)
     x = self.op(x)
-    print('x size after op', x.shape)
     x = x.view([x.size(0),self.C,32,-1])
-    print('x size after output view', x.shape)
     x = self.bn(x)
 
     return x
