@@ -79,8 +79,8 @@ class MixedOp(nn.Module):
     for primitive in PRIMITIVES:
       op = OPS[primitive](C, stride, rank, False)
       #TODO reintroduce this?
-      #if 'pool' in primitive:
-      #  op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
+      if 'pool' in primitive:
+        op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
       self._ops.append(op)
 
   def forward(self, x, weights):
