@@ -20,7 +20,7 @@ OPS = {
     nn.Conv2d(C, C, (7,1), stride=(stride, 1), padding=(3, 0), bias=False),
     nn.BatchNorm2d(C, affine=affine)
     ),
-  'linear' : lambda C, stride, rank, affine: LinearOp(rank),
+  'linear' : lambda C, stride, rank, affine: LinearOp(C, rank, affine),
   'identity' : lambda C, stride, rank, affine: Identity()
 } 
 
@@ -78,8 +78,8 @@ class Conv(nn.Module):
     super(Conv, self).__init__()
     self.op = nn.Sequential(
       #nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, 32, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=True),
-      nn.BatchNorm2d(32, affine=affine),
+      nn.Conv2d(C_in, C_out, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=True),
+      nn.BatchNorm2d(C_out, affine=affine),
       nn.ReLU(inplace=False),
       nn.Dropout2d(p=0.2)
       )
@@ -98,17 +98,21 @@ class Identity(nn.Module):
 
 class LinearOp(nn.Module):
 
-  def __init__(self, rank):
+  def __init__(self, C, rank, affine):
     super(LinearOp, self).__init__()
+    self.C = C
     self.op = nn.Sequential(
-      nn.Linear(2*rank,2*rank),
+      nn.Linear(2*rank*C,2*rank*C),
       nn.ReLU(inplace=False)
       )
+    self.bn = nn.BatchNorm2d(C, affine=affine)
 
   def forward(self, x):
     x = x.view([x.size(0),1,-1])
     x = self.op(x)
-    x = x.view([x.size(0),1,32,-1])
+    x = x.view([x.size(0),self.C,32,-1])
+    x = self.bn(x)
+
     return x
 
 

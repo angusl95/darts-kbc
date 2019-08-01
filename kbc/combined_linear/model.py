@@ -211,7 +211,7 @@ class NetworkKBC(KBCModel):
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
     combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
+    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
 
@@ -237,7 +237,8 @@ class NetworkKBC(KBCModel):
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
     combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
+    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
+    print('input shape', input.shape)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
 
@@ -267,7 +268,7 @@ class NetworkKBC(KBCModel):
     lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
     rel = rel.view([rel.size(0),1,16,self.rank//16])
     combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
+    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
     s0 = input
 
