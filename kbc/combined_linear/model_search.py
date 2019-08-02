@@ -226,6 +226,8 @@ class Network(KBCModel):
       s0 = cell(s0, weights)
     out = s0.view(s0.size(0),1, -1)
     out = self.projection(out)
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = out.squeeze()
     out = torch.sum(
@@ -263,6 +265,8 @@ class Network(KBCModel):
     # return logits
     out = s0.view(s0.size(0),1, -1)
     out = self.projection(out)
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = out.squeeze()
     out = out @ to_score.transpose(0,1)
@@ -299,6 +303,8 @@ class Network(KBCModel):
     #out = self.global_pooling(s0)
     out = s0.view(s0.size(0),1, -1)
     out = self.projection(out)
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = out.squeeze()
 
