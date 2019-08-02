@@ -131,7 +131,7 @@ def main():
 
   #TODO there are some default kwargs in network we're not currently setting
   model = Network(args.init_channels, CLASSES, args.layers, criterion, 
-    regularizer, arg.interleaved, dataset.get_shape(), args.rank, args.init, args.reduction, args.steps)
+    regularizer, args.interleaved, dataset.get_shape(), args.rank, args.init, args.reduction, args.steps)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
