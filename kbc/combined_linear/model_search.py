@@ -146,6 +146,7 @@ class Network(KBCModel):
     self.sizes = sizes
     self._init_size = init_size
     self._reduction_flag = reduction_flag
+    self._interleaved = interleaved
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
             nn.Embedding(s, rank)#, sparse=True)
