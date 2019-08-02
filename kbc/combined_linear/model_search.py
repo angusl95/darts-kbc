@@ -130,8 +130,8 @@ class Cell(nn.Module):
 class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
-    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
-    reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
+    interleaved, sizes: Tuple[int, int, int], rank: int, 
+    init_size: float = 1e-3, reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
     #TODO: remove stem multiplier from args?
     super(Network, self).__init__()
     self._C = C
@@ -197,14 +197,17 @@ class Network(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = input
+
+    if self._interleaved:
+      lhs = lhs.view([lhs.size(0),1,10,20])
+      rel = rel.view([rel.size(0),1,10,20])
+      s0 = torch.cat([lhs,rel],3)
+      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+    else:
+      lhs = lhs.view([lhs.size(0),1,10,20])
+      rel = rel.view([rel.size(0),1,10,20])
+      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -225,16 +228,18 @@ class Network(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-
-
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
 
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = input
+    if self._interleaved:
+      lhs = lhs.view([lhs.size(0),1,10,20])
+      rel = rel.view([rel.size(0),1,10,20])
+      s0 = torch.cat([lhs,rel],3)
+      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+    else:
+      lhs = lhs.view([lhs.size(0),1,10,20])
+      rel = rel.view([rel.size(0),1,10,20])
+      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
+
     for i, cell in enumerate(self.cells):
       if cell.reduction:
         weights = F.softmax(self.alphas_reduce, dim=-1)
@@ -259,12 +264,17 @@ class Network(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = input
+
+    if self._interleaved:
+      lhs = lhs.view([lhs.size(0),1,10,20])
+      rel = rel.view([rel.size(0),1,10,20])
+      s0 = torch.cat([lhs,rel],3)
+      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+    else:
+      lhs = lhs.view([lhs.size(0),1,10,20])
+      rel = rel.view([rel.size(0),1,10,20])
+      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
+
     for i, cell in enumerate(self.cells):
       if cell.reduction:
           weights = F.softmax(self.alphas_reduce, dim=-1)

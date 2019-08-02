@@ -46,6 +46,7 @@ parser.add_argument('--arch', type=str, default='KBCNet', help='which architectu
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
+parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
 
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument(
@@ -134,7 +135,7 @@ def main():
 
   genotype = eval("genotypes.%s" % args.arch)
   model = Network(args.init_channels,
-    CLASSES, args.layers, criterion, regularizer, genotype,
+    CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
     dataset.get_shape(), args.rank, args.init, args.reduction)
   model = model.cuda()
 
