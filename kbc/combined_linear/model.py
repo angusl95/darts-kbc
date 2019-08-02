@@ -221,8 +221,8 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel], 2)
-    s0 = input_bn(s0)
-    s0 = input_drop(s0)
+    s0 = self.input_bn(s0)
+    s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
@@ -253,8 +253,8 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel], 2)
-    s0 = input_bn(s0)
-    s0 = input_drop(s0)
+    s0 = self.input_bn(s0)
+    s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
@@ -290,10 +290,10 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel], 2)
-    s0 = input_bn(s0)
-    s0 = input_drop(s0)
+    s0 = self.input_bn(s0)
+    s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
-    
+
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0 = cell(s0, self.drop_path_prob)
