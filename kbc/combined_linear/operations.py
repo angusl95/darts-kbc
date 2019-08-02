@@ -116,7 +116,6 @@ class LinearOp(nn.Module):
     return x
 
 
-
 class Zero(nn.Module):
 
   def __init__(self, stride):
