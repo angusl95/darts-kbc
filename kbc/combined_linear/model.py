@@ -208,12 +208,12 @@ class NetworkKBC(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
     
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
+    lhs = lhs.view([lhs.size(0),1,10,20])#self.rank//16])
+    rel = rel.view([rel.size(0),1,10,20])#self.rank//16])
+    #combined = torch.cat([lhs,rel],3)
+    #input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = input
+    s0 = torch.cat([lhs,rel], 3).expand(-1,self._C,-1,-1)
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
@@ -234,12 +234,15 @@ class NetworkKBC(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
 
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
+    lhs = lhs.view([lhs.size(0),1,10,20])#self.rank//16])
+    rel = rel.view([rel.size(0),1,10,20])#self.rank//16])
+    #combined = torch.cat([lhs,rel],3)
+    #input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
+
+    s0 = torch.cat([lhs,rel], 3).expand(-1,self._C,-1,-1)
+
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = input
+    #s0 = input
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
@@ -264,12 +267,13 @@ class NetworkKBC(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
+    lhs = lhs.view([lhs.size(0),1,10,20])#self.rank//16])
+    rel = rel.view([rel.size(0),1,10,20])#self.rank//16])
+    s0 = torch.cat([lhs,rel], 3).expand(-1,self._C,-1,-1)
+    #combined = torch.cat([lhs,rel],3)
+    #input = combined.view([lhs.size(0),1,32,-1]).expand(-1,self._C, -1, -1)
     #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = input
+    #s0 = input
 
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
