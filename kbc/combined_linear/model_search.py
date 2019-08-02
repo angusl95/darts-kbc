@@ -179,15 +179,20 @@ class Network(KBCModel):
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
-    self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.input_drop = torch.nn.Dropout(p=0.2)
+    self.input_bn = torch.nn.BatchNorm2d(1)
+    #self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(2*self.rank*self._C, self.rank, bias=False)
     #self.projection = nn.Linear(C_prev, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
+    self.output_bn = nn.BatchNorm1d(self.rank)
+    self.output_drop = torch.nn.Dropout(p=0.3)
     self._initialize_alphas()
 
   def new(self):
-    model_new = Network(self._C, self._num_classes, self._layers, self._criterion, self._regularizer,
+    model_new = Network(self._C, self._num_classes, self._layers, self._criterion, 
+      self._regularizer, self._interleaved,
       self.sizes, self.rank, self._init_size, self._reduction_flag, self._steps, 
       self._multiplier, self._stem_multiplier).cuda()
     for x, y in zip(model_new.arch_parameters(), self.arch_parameters()):
@@ -204,11 +209,14 @@ class Network(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+      s0 = s0.view([lhs.size(0),1,20,-1])
     else:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
-      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = input_bn(s0)
+    s0 = input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -235,11 +243,14 @@ class Network(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+      s0 = s0.view([lhs.size(0),1,20,-1])
     else:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
-      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = input_bn(s0)
+    s0 = input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -270,11 +281,14 @@ class Network(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+      s0 = s0.view([lhs.size(0),1,20,-1])
     else:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
-      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = input_bn(s0)
+    s0 = input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:

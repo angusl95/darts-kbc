@@ -183,7 +183,10 @@ class NetworkKBC(KBCModel):
 
     # if auxiliary:
     #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
-    self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.input_drop = torch.nn.Dropout(p=0.2)
+    self.input_bn = torch.nn.BatchNorm2d(1)
+
+    #self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(self.rank*2*self._C, self.rank, bias=False)
 
     self.output_bn = nn.BatchNorm1d(self.rank)
@@ -213,11 +216,14 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+      s0 = s0.view([lhs.size(0),1,20,-1])
     else:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
-      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = input_bn(s0)
+    s0 = input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
@@ -242,14 +248,14 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+      s0 = s0.view([lhs.size(0),1,20,-1])
     else:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
-      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
-
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    #s0 = input
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = input_bn(s0)
+    s0 = input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
       s0 = cell(s0, self.drop_path_prob)
@@ -274,17 +280,20 @@ class NetworkKBC(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    
+
     if self._interleaved:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1]).expand(-1,self._C, -1, -1)
+      s0 = s0.view([lhs.size(0),1,20,-1])
     else:
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
-      s0 = torch.cat([lhs,rel], 2).expand(-1,self._C,-1,-1)
-
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = input_bn(s0)
+    s0 = input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
+    
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0 = cell(s0, self.drop_path_prob)
