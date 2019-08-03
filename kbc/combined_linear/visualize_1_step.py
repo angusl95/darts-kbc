@@ -20,6 +20,9 @@ def plot(genotype, filename):
   for i in range(steps):
     g.node(str(i), fillcolor='lightblue')
 
+  g.edge("e_s", "0", label="interleave", fillcolor="gray")
+  g.edge("e_r", "0", label="interleave", fillcolor="gray")
+
   for i in range(steps):
       op, j = genotype[i]
       if j == 0:

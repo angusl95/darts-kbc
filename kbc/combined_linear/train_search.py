@@ -65,8 +65,8 @@ parser.add_argument(
     help="Regularizer in {}".format(regularizers)
 )
 parser.add_argument(
-    '--rank', default=1000, type=int,
-    help="Factorization rank."
+    '--rank', default=200, type=int,
+    help="Embedding rank."
 )
 parser.add_argument(
     '--init', default=1e-3, type=float,
