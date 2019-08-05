@@ -47,6 +47,7 @@ parser.add_argument('--grad_clip', type=float, default=5, help='gradient clippin
 parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
+parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
 
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument(
@@ -100,6 +101,21 @@ fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
+class CrossEntropyLabelSmooth(nn.Module):
+
+  def __init__(self, num_classes, epsilon):
+    super(CrossEntropyLabelSmooth, self).__init__()
+    self.num_classes = num_classes
+    self.epsilon = epsilon
+    self.logsoftmax = nn.LogSoftmax(dim=1)
+
+  def forward(self, inputs, targets):
+    log_probs = self.logsoftmax(inputs)
+    targets = torch.zeros_like(log_probs).scatter_(1, targets.unsqueeze(1), 1)
+    targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
+    loss = (-targets * log_probs).mean(0).sum()
+    return loss
+
 def main():
   if not torch.cuda.is_available():
     logging.info('no gpu device available')
@@ -124,8 +140,11 @@ def main():
 
   CLASSES = dataset.get_shape()[0]
 
-  criterion = nn.CrossEntropyLoss(reduction='mean')
-  criterion = criterion.cuda()
+  # criterion = nn.CrossEntropyLoss(reduction='mean')
+  # criterion = criterion.cuda()
+
+  criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
+  criterion = criterion_smooth.cuda()
 
   regularizer = {
     'N2': N2(args.reg),
