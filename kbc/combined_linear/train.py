@@ -141,10 +141,9 @@ def main():
   CLASSES = dataset.get_shape()[0]
 
   # criterion = nn.CrossEntropyLoss(reduction='mean')
-  # criterion = criterion.cuda()
-
   criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
-  criterion = criterion_smooth.cuda()
+  criterion = criterion.cuda()
+
 
   regularizer = {
     'N2': N2(args.reg),
