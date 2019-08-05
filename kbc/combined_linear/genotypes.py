@@ -64,4 +64,4 @@ TestNet = Genotype(
   normal_concat = [3]
 )
 
-DARTSNet = Genotype(normal=[('max_pool_3x3', 0), ('conv_7x7', 1), ('dil_conv_5x5', 2), ('dil_conv_3x3', 3)], normal_concat=[4])
+DARTSNet = Genotype(normal=[('identity', 0), ('dil_conv_3x3', 1), ('dil_conv_5x5', 2), ('conv_7x7', 3)], normal_concat=[4])

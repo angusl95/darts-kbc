@@ -116,7 +116,6 @@ def main():
 
   dataset = Dataset(args.dataset)
   train_examples = torch.from_numpy(dataset.get_train().astype('int64'))
-  # valid_examples = torch.from_numpy(dataset.get_valid().astype('int64'))
 
   #TODO: does below need reintroducing somewhere?
 
@@ -134,6 +133,7 @@ def main():
   }[args.regularizer]
 
   genotype = eval("genotypes.%s" % args.arch)
+  logging.info('genotype = %s', genotype)
   model = Network(args.init_channels,
     CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
     dataset.get_shape(), args.rank, args.init, args.reduction)

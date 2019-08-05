@@ -25,7 +25,7 @@ class Architect(object):
     except:
       moment = torch.zeros_like(theta)
     #TODO allow unused here???
-    dtheta = _concat(torch.autograd.grad(loss, self.model.parameters(), allow_unused = True)).data + self.network_weight_decay*theta
+    dtheta = _concat(torch.autograd.grad(loss, self.model.parameters())).data + self.network_weight_decay*theta
     unrolled_model = self._construct_model_from_theta(theta.sub(eta, moment+dtheta))
     return unrolled_model
 
