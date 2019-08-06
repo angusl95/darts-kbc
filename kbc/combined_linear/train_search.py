@@ -33,7 +33,7 @@ parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight dec
 parser.add_argument('--report_freq', type=float, default=5, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--epochs', type=int, default=100, help='num of training epochs')
-parser.add_argument('--init_channels', type=int, default=16, help='num of init channels')
+parser.add_argument('--channels', type=int, default=16, help='num of channels')
 parser.add_argument('--layers', type=int, default=8, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
 parser.add_argument('--drop_path_prob', type=float, default=0.3, help='drop path probability')
@@ -47,7 +47,7 @@ parser.add_argument('--arch_weight_decay', type=float, default=1e-3, help='weigh
 parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
-
+parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
 
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument(
@@ -101,6 +101,26 @@ fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
+class CrossEntropyLabelSmooth(nn.Module):
+
+  def __init__(self, num_classes, epsilon):
+    super(CrossEntropyLabelSmooth, self).__init__()
+    self.num_classes = num_classes
+    self.epsilon = epsilon
+    self.logsoftmax = nn.LogSoftmax(dim=1)
+
+  def forward(self, inputs, targets):
+    log_probs = self.logsoftmax(inputs)
+    targets = torch.zeros_like(log_probs).scatter_(1, targets.unsqueeze(1), 1)
+    targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
+    loss = (-targets * log_probs).mean(0).sum()
+    return loss
+
+def main():
+  if not torch.cuda.is_available():
+    logging.info('no gpu device available')
+    sys.exit(1)
+
 def main():
   if not torch.cuda.is_available():
     logging.info('no gpu device available')
@@ -121,7 +141,8 @@ def main():
 
   CLASSES = dataset.get_shape()[0]
 
-  criterion = nn.CrossEntropyLoss(reduction='mean')
+  # criterion = nn.CrossEntropyLoss(reduction='mean')
+  criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion = criterion.cuda()
 
   regularizer = {
@@ -130,7 +151,7 @@ def main():
     }[args.regularizer]
 
   #TODO there are some default kwargs in network we're not currently setting
-  model = Network(args.init_channels, CLASSES, args.layers, criterion, 
+  model = Network(args.channels, CLASSES, args.layers, criterion, 
     regularizer, args.interleaved, dataset.get_shape(), args.rank, args.init, args.reduction, args.steps)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
@@ -218,44 +239,6 @@ def main():
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
 
-
-# def train(train_queue, valid_queue, model, architect, criterion, optimizer, lr):
-#   objs = utils.AvgrageMeter()
-#   top1 = utils.AvgrageMeter()
-#   top5 = utils.AvgrageMeter()
-
-#   for step, (input, target) in enumerate(train_queue):
-#     model.train()
-#     n = input.size(0)
-
-#     input = Variable(input, requires_grad=False).cuda()
-#     target = Variable(target, requires_grad=False).cuda(async=True)
-
-#     # get a random minibatch from the search queue with replacement
-#     input_search, target_search = next(iter(valid_queue))
-#     input_search = Variable(input_search, requires_grad=False).cuda()
-#     target_search = Variable(target_search, requires_grad=False).cuda(async=True)
-
-#     architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
-
-#     optimizer.zero_grad()
-#     logits = model(input)
-#     loss = criterion(logits, target)
-
-#     loss.backward()
-#     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
-#     optimizer.step()
-
-#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-#     objs.update(loss.data[0], n)
-#     top1.update(prec1.data[0], n)
-#     top5.update(prec5.data[0], n)
-
-#     if step % args.report_freq == 0:
-#       logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-# return top1.avg, objs.avg
-
 def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
@@ -325,32 +308,6 @@ def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     m = (mrrs['lhs'] + mrrs['rhs']) / 2.
     h = (hits['lhs'] + hits['rhs']) / 2.
     return {'MRR': m, 'hits@[1,3,10]': h}
-
-
-# def infer(valid_queue, model, criterion):
-#   objs = utils.AvgrageMeter()
-#   top1 = utils.AvgrageMeter()
-#   top5 = utils.AvgrageMeter()
-#   model.eval()
-
-#   for step, (input, target) in enumerate(valid_queue):
-#     input = Variable(input, volatile=True).cuda()
-#     target = Variable(target, volatile=True).cuda(async=True)
-
-#     logits = model(input)
-#     loss = criterion(logits, target)
-
-#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-#     n = input.size(0)
-#     objs.update(loss.data[0], n)
-#     top1.update(prec1.data[0], n)
-#     top5.update(prec5.data[0], n)
-
-#     if step % args.report_freq == 0:
-#       logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-#   return top1.avg, objs.avg
-
 
 if __name__ == '__main__':
   main() 

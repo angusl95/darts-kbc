@@ -32,7 +32,7 @@ parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight dec
 parser.add_argument('--report_freq', type=float, default=5, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
-parser.add_argument('--init_channels', type=int, default=36, help='num of init channels')
+parser.add_argument('--channels', type=int, default=36, help='num of channels')
 parser.add_argument('--layers', type=int, default=5, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
 parser.add_argument('--auxiliary', action='store_true', default=False, help='use auxiliary tower')
@@ -152,7 +152,7 @@ def main():
 
   genotype = eval("genotypes.%s" % args.arch)
   logging.info('genotype = %s', genotype)
-  model = Network(args.init_channels,
+  model = Network(args.channels,
     CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
     dataset.get_shape(), args.rank, args.init, args.reduction)
   model = model.cuda()
@@ -197,14 +197,6 @@ def main():
     logging.info('epoch %d lr %e', epoch, lr)
     model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
 
-    #train_acc, train_obj = train(train_queue, model, criterion, optimizer)
-    #logging.info('train_acc %f', train_acc)
-
-    #valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    #logging.info('valid_acc %f', valid_acc)
-
-    #print('examples shape')
-    #print(examples.shape)
     train_epoch(train_examples, train_queue, model, optimizer, 
       regularizer, args.batch_size)
     if (epoch + 1) % args.report_freq == 0:
@@ -235,38 +227,6 @@ def main():
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
-
-
-# def train(train_queue, model, criterion, optimizer):
-#   objs = utils.AvgrageMeter()
-#   top1 = utils.AvgrageMeter()
-#   top5 = utils.AvgrageMeter()
-#   model.train()
-
-#   for step, (input, target) in enumerate(train_queue):
-#     input = Variable(input).cuda()
-#     target = Variable(target).cuda(async=True)
-
-#     optimizer.zero_grad()
-#     logits, logits_aux = model(input)
-#     loss = criterion(logits, target)
-#     if args.auxiliary:
-#       loss_aux = criterion(logits_aux, target)
-#       loss += args.auxiliary_weight*loss_aux
-#     loss.backward()
-#     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
-#     optimizer.step()
-
-#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-#     n = input.size(0)
-#     objs.update(loss.data[0], n)
-#     top1.update(prec1.data[0], n)
-#     top5.update(prec5.data[0], n)
-
-#     if step % args.report_freq == 0:
-#       logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-#   return top1.avg, objs.avg
 
 def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
@@ -317,31 +277,6 @@ def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     m = (mrrs['lhs'] + mrrs['rhs']) / 2.
     h = (hits['lhs'] + hits['rhs']) / 2.
     return {'MRR': m, 'hits@[1,3,10]': h}
-
-# def infer(valid_queue, model, criterion):
-#   objs = utils.AvgrageMeter()
-#   top1 = utils.AvgrageMeter()
-#   top5 = utils.AvgrageMeter()
-#   model.eval()
-
-#   for step, (input, target) in enumerate(valid_queue):
-#     input = Variable(input, volatile=True).cuda()
-#     target = Variable(target, volatile=True).cuda(async=True)
-
-#     logits, _ = model(input)
-#     loss = criterion(logits, target)
-
-#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-#     n = input.size(0)
-#     objs.update(loss.data[0], n)
-#     top1.update(prec1.data[0], n)
-#     top5.update(prec5.data[0], n)
-
-#     if step % args.report_freq == 0:
-#       logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-#   return top1.avg, objs.avg
-
 
 if __name__ == '__main__':
   main() 
