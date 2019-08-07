@@ -79,7 +79,7 @@ class Conv(nn.Module):
     self.op = nn.Sequential(
       #nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_out, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=True),
-      nn.BatchNorm2d(C_out, affine=affine),
+      #nn.BatchNorm2d(C_out, affine=affine),
       nn.ReLU(inplace=False),
       nn.Dropout2d(p=0.2)
       )

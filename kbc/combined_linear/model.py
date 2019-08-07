@@ -184,12 +184,12 @@ class NetworkKBC(KBCModel):
     # if auxiliary:
     #   self.auxiliary_head = AuxiliaryHeadCIFAR(C_to_auxiliary, num_classes)
     self.input_drop = torch.nn.Dropout(p=0.2)
-    self.input_bn = torch.nn.BatchNorm2d(1)
+    #self.input_bn = torch.nn.BatchNorm2d(1)
 
     #self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(self.rank*2*self._C, self.rank)#, bias=False)
 
-    self.output_bn = nn.BatchNorm1d(self.rank)
+    #self.output_bn = nn.BatchNorm1d(self.rank)
     self.output_drop = torch.nn.Dropout(p=0.3)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
@@ -231,7 +231,7 @@ class NetworkKBC(KBCModel):
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
     out = self.output_drop(out)
-    out = self.output_bn(out)
+    #out = self.output_bn(out)
     out = F.relu(out)
     out = torch.sum(
         out * rhs, 1, keepdim=True
@@ -253,7 +253,7 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
+    #s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
 
@@ -263,7 +263,7 @@ class NetworkKBC(KBCModel):
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
     out = self.output_drop(out)
-    out = self.output_bn(out)
+    #out = self.output_bn(out)
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return (
@@ -290,7 +290,7 @@ class NetworkKBC(KBCModel):
       lhs = lhs.view([lhs.size(0),1,10,20])
       rel = rel.view([rel.size(0),1,10,20])
       s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
+    #s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
 
@@ -301,7 +301,7 @@ class NetworkKBC(KBCModel):
     #out = self.global_pooling(s0)
     out = self.projection(out.view(out.size(0),-1))
     out = self.output_drop(out)
-    out = self.output_bn(out)
+    #out = self.output_bn(out)
     out = F.relu(out)
 
     return out
