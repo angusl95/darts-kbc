@@ -74,11 +74,11 @@ class KBCModel(nn.Module, ABC):
 
 class MixedOp(nn.Module):
 
-  def __init__(self, C, stride, rank):
+  def __init__(self, C, stride, emb_dim):
     super(MixedOp, self).__init__()
     self._ops = nn.ModuleList()
     for primitive in PRIMITIVES:
-      op = OPS[primitive](C, stride, rank, False)
+      op = OPS[primitive](C, stride, emb_dim, False)
       #TODO reintroduce this?
       if 'pool' in primitive:
         op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
@@ -90,15 +90,15 @@ class MixedOp(nn.Module):
 
 class Cell(nn.Module):
 
-  def __init__(self, steps, rank, C):
+  def __init__(self, steps, emb_dim, C):
     super(Cell, self).__init__()
     self._steps = steps
-    self._rank = rank
+    self._emb_dim = emb_dim
     self._ops = nn.ModuleList()
     for i in range(self._steps):
       for j in range(1):
         stride = 1
-        op = MixedOp(C, stride, rank)
+        op = MixedOp(C, stride, emb_dim)
         self._ops.append(op)
 
   def forward(self, s0, weights):
@@ -116,7 +116,7 @@ class Cell(nn.Module):
 class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
-    interleaved, sizes: Tuple[int, int, int], rank: int, 
+    interleaved, sizes: Tuple[int, int, int], emb_dim: int, 
     init_size: float = 1e-3, steps=4):
     #TODO: remove stem multiplier from args?
     super(Network, self).__init__()
@@ -126,13 +126,16 @@ class Network(KBCModel):
     self._criterion = criterion
     self._regularizer = regularizer
     self._steps = steps
-    self.rank = rank
+    self.emb_dim = emb_dim
+    if self.emb_dim % 20 != 0:
+      raise ValueError('embedding size must be divisble by 20')
+    self.emb_height = self.emb_dim/20
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
-            nn.Embedding(s, rank)#, sparse=True)
+            nn.Embedding(s, emb_dim)#, sparse=True)
             for s in sizes[:2]
         ])
     self.embeddings[0].weight.data *= init_size
@@ -140,23 +143,23 @@ class Network(KBCModel):
 
     self.cells = nn.ModuleList()
     for i in range(layers):
-      cell = Cell(steps, self.rank, self._C)
+      cell = Cell(steps, self.emb_dim, self._C)
       self.cells += [cell]
 
     self.input_drop = torch.nn.Dropout(p=0.2)
     self.input_bn = torch.nn.BatchNorm2d(1)
-    self.projection = nn.Linear(2*self.rank*self._C, self.rank)#, bias=False)
-    #self.projection = nn.Linear(C_prev, self.rank, bias=False)
+    self.projection = nn.Linear(2*self.emb_dim*self._C, self.emb_dim)#, bias=False)
+    #self.projection = nn.Linear(C_prev, self.emb_dim, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
-    self.output_bn = nn.BatchNorm1d(self.rank)
+    self.output_bn = nn.BatchNorm1d(self.emb_dim)
     self.output_drop = torch.nn.Dropout(p=0.3)
     self._initialize_alphas()
 
   def new(self):
     model_new = Network(self._C, self._num_classes, self._layers, self._criterion, 
       self._regularizer, self._interleaved,
-      self.sizes, self.rank, self._init_size, self._steps).cuda()
+      self.sizes, self.emb_dim, self._init_size, self._steps).cuda()
     for x, y in zip(model_new.arch_parameters(), self.arch_parameters()):
         x.data.copy_(y.data)
     return model_new
@@ -168,13 +171,13 @@ class Network(KBCModel):
     to_score = self.embeddings[0].weight
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
@@ -201,13 +204,13 @@ class Network(KBCModel):
     to_score = self.embeddings[0].weight
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
@@ -238,13 +241,13 @@ class Network(KBCModel):
     rel = self.embeddings[1](queries[:, 1])
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)

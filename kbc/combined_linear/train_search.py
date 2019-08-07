@@ -50,7 +50,7 @@ datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument('--dataset', choices=datasets, help="Dataset in {}".format(datasets))
 regularizers = ['N3', 'N2']
 parser.add_argument('--regularizer', choices=regularizers, default='N3', help="Regularizer in {}".format(regularizers))
-parser.add_argument('--rank', default=200, type=int, help="Embedding rank.")
+parser.add_argument('--emb_dim', default=200, type=int, help="Embedding dimension.")
 parser.add_argument('--init', default=1e-3, type=float, help="Initial scale")
 parser.add_argument('--reg', default=0, type=float, help="Regularization weight")
 optimizers = ['Adagrad', 'Adam', 'SGD']
@@ -113,9 +113,8 @@ def main():
       'N3': N3(args.reg),
     }[args.regularizer]
 
-  #TODO there are some default kwargs in network we're not currently setting
   model = Network(args.channels, CLASSES, args.layers, criterion, 
-    regularizer, args.interleaved, dataset.get_shape(), args.rank, args.init, args.steps)
+    regularizer, args.interleaved, dataset.get_shape(), args.emb_dim, args.init, args.steps)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 

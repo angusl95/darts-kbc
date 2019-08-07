@@ -47,7 +47,7 @@ datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
 parser.add_argument('--dataset', choices=datasets, help="Dataset in {}".format(datasets))
 regularizers = ['N3', 'N2']
 parser.add_argument('--regularizer', choices=regularizers, default='N3', help="Regularizer in {}".format(regularizers))
-parser.add_argument('--rank', default=200, type=int, help="Embedding rank")
+parser.add_argument('--emb_dim', default=200, type=int, help="Embedding dimension")
 parser.add_argument('--init', default=1e-3, type=float, help="Initial scale")
 parser.add_argument('--reg', default=0, type=float, help="Regularization weight")
 optimizers = ['Adagrad', 'Adam', 'SGD']
@@ -117,7 +117,7 @@ def main():
   logging.info('genotype = %s', genotype)
   model = Network(args.channels,
     CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
-    dataset.get_shape(), args.rank, args.init)
+    dataset.get_shape(), args.emb_dim, args.init)
   model = model.cuda()
 
   optimizer = {

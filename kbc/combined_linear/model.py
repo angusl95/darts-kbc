@@ -73,12 +73,12 @@ class KBCModel(nn.Module, ABC):
 
 class Cell(nn.Module):
 
-  def __init__(self, genotype, rank, C):
+  def __init__(self, genotype, emb_dim, C):
     super(Cell, self).__init__()
 
     op_names, indices = zip(*genotype.normal)
     concat = genotype.normal_concat
-    self._rank = rank
+    self._emb_dim = emb_dim
     self._compile(C, op_names, indices, concat)
 
   def _compile(self, C, op_names, indices, concat):
@@ -89,7 +89,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
       stride = 1
-      op = OPS[name](C, stride,self._rank, True)
+      op = OPS[name](C, stride,self._emb_dim, True)
       self._ops += [op]
     self._indices = indices
 
@@ -116,7 +116,7 @@ class Cell(nn.Module):
 class NetworkKBC(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
-    genotype, interleaved, sizes: Tuple[int, int, int], rank: int, 
+    genotype, interleaved, sizes: Tuple[int, int, int], emb_dim: int, 
     init_size: float = 1e-3, steps=4):
     super(NetworkKBC, self).__init__()
     self._C = C
@@ -125,12 +125,15 @@ class NetworkKBC(KBCModel):
     self._criterion = criterion
     self._regularizer = regularizer
     self._steps = steps
-    self.rank = rank
+    self.emb_dim = emb_dim
+    if self.emb_dim % 20 != 0:
+      raise ValueError('embedding size must be divisble by 20')
+    self.emb_height = self.emb_dim/20
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
     self.embeddings = nn.ModuleList([
-            nn.Embedding(s, rank, sparse=False)#True)
+            nn.Embedding(s, emb_dim, sparse=False)#True)
             for s in sizes[:2]
         ])
     self.embeddings[0].weight.data *= init_size
@@ -139,15 +142,15 @@ class NetworkKBC(KBCModel):
     self.cells = nn.ModuleList()
     # reduction_prev = False
     for i in range(layers):
-      cell = Cell(genotype, self.rank, self._C)
+      cell = Cell(genotype, self.emb_dim, self._C)
       self.cells += [cell]
 
     self.input_drop = torch.nn.Dropout(p=0.2)
     self.input_bn = torch.nn.BatchNorm2d(1)
 
-    self.projection = nn.Linear(self.rank*2*self._C, self.rank)#, bias=False)
+    self.projection = nn.Linear(self.emb_dim*2*self._C, self.emb_dim)#, bias=False)
 
-    self.output_bn = nn.BatchNorm1d(self.rank)
+    self.output_bn = nn.BatchNorm1d(self.emb_dim)
     self.output_drop = torch.nn.Dropout(p=0.3)
 
   def score(self, x):
@@ -157,13 +160,13 @@ class NetworkKBC(KBCModel):
     to_score = self.embeddings[0].weight
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
@@ -188,13 +191,13 @@ class NetworkKBC(KBCModel):
     to_score = self.embeddings[0].weight
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
@@ -224,13 +227,13 @@ class NetworkKBC(KBCModel):
     rel = self.embeddings[1](queries[:, 1])
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,20,-1])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,10,20])
-      rel = rel.view([rel.size(0),1,10,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
