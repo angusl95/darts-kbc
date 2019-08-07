@@ -3,13 +3,13 @@ import sys
 import time
 import glob
 import tqdm
-import numpy as np
 import torch
 import utils
 import logging
 import argparse
-import torch.nn as nn
 import torch.utils
+import numpy as np
+import torch.nn as nn
 import torch.utils.data
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
@@ -17,10 +17,10 @@ import torch.backends.cudnn as cudnn
 from torch import optim
 from typing import Dict
 from datasets import Dataset
-from regularizers import N2, N3, Regularizer
-from torch.autograd import Variable
-from model_search import Network
 from architect import Architect
+from model_search import Network
+from torch.autograd import Variable
+from regularizers import N2, N3, Regularizer
 
 
 parser = argparse.ArgumentParser("cifar")
@@ -40,55 +40,23 @@ parser.add_argument('--drop_path_prob', type=float, default=0.3, help='drop path
 parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=2, help='random seed')
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
-parser.add_argument('--train_portion', type=float, default=0.5, help='portion of training data')
 parser.add_argument('--unrolled', action='store_true', default=False, help='use one-step unrolled validation loss')
 parser.add_argument('--arch_learning_rate', type=float, default=3e-4, help='learning rate for arch encoding')
 parser.add_argument('--arch_weight_decay', type=float, default=1e-3, help='weight decay for arch encoding')
-parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
 parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
-
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
-parser.add_argument(
-    '--dataset', choices=datasets,
-    help="Dataset in {}".format(datasets)
-)
-# models = ['CP', 'ComplEx']
-# parser.add_argument(
-#     '--model', choices=models,
-#     help="Model in {}".format(models)
-# )
+parser.add_argument('--dataset', choices=datasets, help="Dataset in {}".format(datasets))
 regularizers = ['N3', 'N2']
-parser.add_argument(
-    '--regularizer', choices=regularizers, default='N3',
-    help="Regularizer in {}".format(regularizers)
-)
-parser.add_argument(
-    '--rank', default=200, type=int,
-    help="Embedding rank."
-)
-parser.add_argument(
-    '--init', default=1e-3, type=float,
-    help="Initial scale"
-)
-parser.add_argument(
-    '--reg', default=0, type=float,
-    help="Regularization weight"
-)
+parser.add_argument('--regularizer', choices=regularizers, default='N3', help="Regularizer in {}".format(regularizers))
+parser.add_argument('--rank', default=200, type=int, help="Embedding rank.")
+parser.add_argument('--init', default=1e-3, type=float, help="Initial scale")
+parser.add_argument('--reg', default=0, type=float, help="Regularization weight")
 optimizers = ['Adagrad', 'Adam', 'SGD']
-parser.add_argument(
-    '--optimizer', choices=optimizers, default='Adagrad',
-    help="Optimizer in {}".format(optimizers)
-)
-parser.add_argument(
-    '--decay1', default=0.9, type=float,
-    help="decay rate for the first moment estimate in Adam"
-)
-parser.add_argument(
-    '--decay2', default=0.999, type=float,
-    help="decay rate for second moment estimate in Adam"
-)
+parser.add_argument('--optimizer', choices=optimizers, default='Adagrad', help="Optimizer in {}".format(optimizers))
+parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for the first moment estimate in Adam")
+parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
 args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
@@ -121,11 +89,6 @@ def main():
     logging.info('no gpu device available')
     sys.exit(1)
 
-def main():
-  if not torch.cuda.is_available():
-    logging.info('no gpu device available')
-    sys.exit(1)
-
   np.random.seed(args.seed)
   torch.cuda.set_device(args.gpu)
   cudnn.benchmark = True
@@ -152,11 +115,10 @@ def main():
 
   #TODO there are some default kwargs in network we're not currently setting
   model = Network(args.channels, CLASSES, args.layers, criterion, 
-    regularizer, args.interleaved, dataset.get_shape(), args.rank, args.init, args.reduction, args.steps)
+    regularizer, args.interleaved, dataset.get_shape(), args.rank, args.init, args.steps)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
-  #TODO force SGD for now, can we change?
   optimizer = {
     'Adagrad': lambda: optim.Adagrad(
       model.parameters(), 
@@ -173,10 +135,6 @@ def main():
   # #TODO can we reintroduce these?
   #     momentum=args.momentum,
   #     weight_decay=args.weight_decay)
-
-  #num_train = len(train_data)
-  #indices = list(range(num_train))
-  #split = int(np.floor(args.train_portion * num_train))
 
   train_queue = torch.utils.data.DataLoader(
       train_examples, batch_size=args.batch_size,
@@ -206,19 +164,10 @@ def main():
     logging.info('genotype = %s', genotype)
 
     print(F.softmax(model.alphas_normal, dim=-1))
-    if args.reduction:
-      print(F.softmax(model.alphas_reduce, dim=-1))
 
-    # training
-    #was using train_queue/valid_queue here instead of examples
-    #removed acc/obj here as in original code
     train_epoch(train_examples, train_queue, valid_queue, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)
-    #logging.info('train_acc %f', train_acc)
 
-    # validation
-    # valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    # logging.info('valid_acc %f', valid_acc)
     if (epoch + 1) % args.report_freq == 0:
       valid, test, train = [
               avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
@@ -242,25 +191,10 @@ def main():
 def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
-  #train_examples = train_examples[torch.randperm(train_examples.shape[0]), :]
-  #valid_examples = valid_examples[torch.randperm(valid_examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
   with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
-      #b_begin = 0
-      #while b_begin < valid_examples.shape[0]:
       for step, input in enumerate(train_queue):
-          ##set current batch
-          # input = train_examples[
-          #     b_begin:b_begin + batch_size
-          # ].cuda()
-
-          # input_search = valid_examples[
-          # b_begin:b_begin + batch_size
-          # ].cuda()
-
-          # target = input[:, 2]
-          # target_search = input_search[:, 2]
 
           model.train()
           n = input.size(0)
@@ -269,30 +203,24 @@ def train_epoch(train_examples,train_queue, valid_queue,
           input = Variable(input, requires_grad=False).cuda()
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
-          # get a random minibatch from the search queue with replacement
           input_search = next(iter(valid_queue))
           input_search = Variable(input_search, requires_grad=False).cuda()
           target_search = Variable(input_search[:,2], requires_grad=False).cuda()#async=True)
 
           architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
-          #compute predictions, ground truth
           predictions, factors = model.forward(input)
           truth = input[:, 2]
 
-          #evaluate loss
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
 
-          #optimise
           optimizer.zero_grad()
           l.backward()
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
-          #b_begin += batch_size
 
-          #progress bar
           bar.update(input.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 

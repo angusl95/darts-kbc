@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from abc import ABC, abstractmethod
-from typing import Tuple, List, Dict
+
 from operations import *
-from torch.autograd import Variable
-from genotypes import PRIMITIVES
 from genotypes import Genotype
+from genotypes import PRIMITIVES
+from abc import ABC, abstractmethod
+from torch.autograd import Variable
+from typing import Tuple, List, Dict
 
 class KBCModel(nn.Module, ABC):
     @abstractmethod
@@ -89,33 +90,18 @@ class MixedOp(nn.Module):
 
 class Cell(nn.Module):
 
-  def __init__(self, steps, rank, multiplier, C_prev_prev, C_prev, C, reduction, reduction_prev):
+  def __init__(self, steps, rank, C):
     super(Cell, self).__init__()
-    self.reduction = reduction
-
-    # if reduction_prev:
-    #   self.preprocess0 = FactorizedReduce(C_prev_prev, C, affine=False)
-    # else:
-    #   self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0, affine=False)
-    # self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
     self._steps = steps
-    self._multiplier = multiplier
     self._rank = rank
-
     self._ops = nn.ModuleList()
-    self._bns = nn.ModuleList()
     for i in range(self._steps):
-      #for j in range(2+i):
       for j in range(1):
-        #stride = 2 if reduction and j < 2 else 1
         stride = 1
         op = MixedOp(C, stride, rank)
         self._ops.append(op)
 
   def forward(self, s0, weights):
-    # s0 = self.preprocess0(s0)
-    # s1 = self.preprocess1(s1)
-
     #states = [s0]
     #offset = 0
     for i in range(self._steps):
@@ -131,7 +117,7 @@ class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
     interleaved, sizes: Tuple[int, int, int], rank: int, 
-    init_size: float = 1e-3, reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
+    init_size: float = 1e-3, steps=4):
     #TODO: remove stem multiplier from args?
     super(Network, self).__init__()
     self._C = C
@@ -140,12 +126,9 @@ class Network(KBCModel):
     self._criterion = criterion
     self._regularizer = regularizer
     self._steps = steps
-    self._multiplier = multiplier
-    self._stem_multiplier = stem_multiplier
     self.rank = rank
     self.sizes = sizes
     self._init_size = init_size
-    self._reduction_flag = reduction_flag
     self._interleaved = interleaved
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
@@ -155,33 +138,13 @@ class Network(KBCModel):
     self.embeddings[0].weight.data *= init_size
     self.embeddings[1].weight.data *= init_size
 
-    C_curr = C
-    #C_curr = stem_multiplier*C
-    # self.stem = nn.Sequential(
-    #   nn.Conv2d(3, C_curr, 3, padding=1, bias=False),
-    #   nn.BatchNorm2d(C_curr)
-    # )
- 
-    C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
     self.cells = nn.ModuleList()
-    reduction_prev = False
     for i in range(layers):
-      if self._reduction_flag:
-        if i in [layers//3, 2*layers//3]:
-          C_curr *= 2
-          reduction = True
-        else:
-          reduction = False
-      else:
-        reduction = False
-      cell = Cell(steps, self.rank, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
-      reduction_prev = reduction
+      cell = Cell(steps, self.rank, self._C)
       self.cells += [cell]
-      C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
     self.input_drop = torch.nn.Dropout(p=0.2)
     self.input_bn = torch.nn.BatchNorm2d(1)
-    #self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(2*self.rank*self._C, self.rank)#, bias=False)
     #self.projection = nn.Linear(C_prev, self.rank, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
@@ -193,8 +156,7 @@ class Network(KBCModel):
   def new(self):
     model_new = Network(self._C, self._num_classes, self._layers, self._criterion, 
       self._regularizer, self._interleaved,
-      self.sizes, self.rank, self._init_size, self._reduction_flag, self._steps, 
-      self._multiplier, self._stem_multiplier).cuda()
+      self.sizes, self.rank, self._init_size, self._steps).cuda()
     for x, y in zip(model_new.arch_parameters(), self.arch_parameters()):
         x.data.copy_(y.data)
     return model_new
@@ -219,10 +181,7 @@ class Network(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      if cell.reduction:
-          weights = F.softmax(self.alphas_reduce, dim=-1)
-      else:
-          weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     out = s0.view(s0.size(0),1, -1)
     out = self.projection(out)
@@ -255,10 +214,7 @@ class Network(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      if cell.reduction:
-        weights = F.softmax(self.alphas_reduce, dim=-1)
-      else:
-        weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     #out = self.global_pooling(s0)
     # logits = self.classifier(out.view(out.size(0),-1))
@@ -295,10 +251,7 @@ class Network(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      if cell.reduction:
-          weights = F.softmax(self.alphas_reduce, dim=-1)
-      else:
-          weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax(self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     #out = self.global_pooling(s0)
     out = s0.view(s0.size(0),1, -1)
@@ -324,16 +277,8 @@ class Network(KBCModel):
     num_ops = len(PRIMITIVES)
 
     self.alphas_normal = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
-    self.alphas_reduce = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
-    if self._reduction_flag:
-      self._arch_parameters = [
-        self.alphas_normal,
-        self.alphas_reduce,
-      ]
-    else:
-      self._arch_parameters = [
-        self.alphas_normal
-      ]
+    #self.alphas_reduce = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
+    self._arch_parameters = [self.alphas_normal]
 
   def arch_parameters(self):
     return self._arch_parameters
@@ -370,13 +315,11 @@ class Network(KBCModel):
       return gene
 
     gene_normal = _parse(F.softmax(self.alphas_normal, dim=-1).data.cpu().numpy())
-    #gene_reduce = _parse(F.softmax(self.alphas_reduce, dim=-1).data.cpu().numpy())
 
     #concat = range(2+self._steps-self._multiplier, self._steps+2)
     concat = [self._steps]
     genotype = Genotype(
       normal=gene_normal, normal_concat=concat
-      #reduce=gene_reduce, reduce_concat=concat
     )
     return genotype
 

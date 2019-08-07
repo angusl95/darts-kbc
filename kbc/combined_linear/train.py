@@ -2,25 +2,25 @@ import os
 import sys
 import time
 import glob
-import numpy as np
 import tqdm
 import torch
 import utils
 import logging
 import argparse
-import torch.nn as nn
 import genotypes
 import torch.utils
+import numpy as np
+import torch.nn as nn
 import torch.utils.data
 import torch.backends.cudnn as cudnn
+
 from torch import optim
 from typing import Dict
 from datasets import Dataset
 from models import CP, ComplEx
-from regularizers import N2, N3, Regularizer
 from torch.autograd import Variable
 from model import NetworkKBC as Network
-
+from regularizers import N2, N3, Regularizer
 
 parser = argparse.ArgumentParser("cifar")
 parser.add_argument('--data', type=str, default='../data', help='location of the data corpus')
@@ -35,60 +35,25 @@ parser.add_argument('--epochs', type=int, default=600, help='num of training epo
 parser.add_argument('--channels', type=int, default=36, help='num of channels')
 parser.add_argument('--layers', type=int, default=5, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
-parser.add_argument('--auxiliary', action='store_true', default=False, help='use auxiliary tower')
-parser.add_argument('--auxiliary_weight', type=float, default=0.4, help='weight for auxiliary loss')
-parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
-parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
 parser.add_argument('--drop_path_prob', type=float, default=0.2, help='drop path probability')
 parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=0, help='random seed')
 parser.add_argument('--arch', type=str, default='KBCNet', help='which architecture to use')
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
-parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
 parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
-
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
-parser.add_argument(
-    '--dataset', choices=datasets,
-    help="Dataset in {}".format(datasets)
-)
-# models = ['CP', 'ComplEx']
-# parser.add_argument(
-#     '--model', choices=models,
-#     help="Model in {}".format(models)
-# )
+parser.add_argument('--dataset', choices=datasets, help="Dataset in {}".format(datasets))
 regularizers = ['N3', 'N2']
-parser.add_argument(
-    '--regularizer', choices=regularizers, default='N3',
-    help="Regularizer in {}".format(regularizers)
-)
-parser.add_argument(
-    '--rank', default=200, type=int,
-    help="Embedding rank."
-)
-parser.add_argument(
-    '--init', default=1e-3, type=float,
-    help="Initial scale"
-)
-parser.add_argument(
-    '--reg', default=0, type=float,
-    help="Regularization weight"
-)
+parser.add_argument('--regularizer', choices=regularizers, default='N3', help="Regularizer in {}".format(regularizers))
+parser.add_argument('--rank', default=200, type=int, help="Embedding rank")
+parser.add_argument('--init', default=1e-3, type=float, help="Initial scale")
+parser.add_argument('--reg', default=0, type=float, help="Regularization weight")
 optimizers = ['Adagrad', 'Adam', 'SGD']
-parser.add_argument(
-    '--optimizer', choices=optimizers, default='Adagrad',
-    help="Optimizer in {}".format(optimizers)
-)
-parser.add_argument(
-    '--decay1', default=0.9, type=float,
-    help="decay rate for the first moment estimate in Adam"
-)
-parser.add_argument(
-    '--decay2', default=0.999, type=float,
-    help="decay rate for second moment estimate in Adam"
-)
+parser.add_argument('--optimizer', choices=optimizers, default='Adagrad', help="Optimizer in {}".format(optimizers))
+parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for the first moment estimate in Adam")
+parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
 args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
@@ -134,7 +99,6 @@ def main():
   train_examples = torch.from_numpy(dataset.get_train().astype('int64'))
 
   #TODO: does below need reintroducing somewhere?
-
   # device = 'cuda'
   # model.to(device)
 
@@ -143,7 +107,6 @@ def main():
   # criterion = nn.CrossEntropyLoss(reduction='mean')
   criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion = criterion.cuda()
-
 
   regularizer = {
     'N2': N2(args.reg),
@@ -154,7 +117,7 @@ def main():
   logging.info('genotype = %s', genotype)
   model = Network(args.channels,
     CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
-    dataset.get_shape(), args.rank, args.init, args.reduction)
+    dataset.get_shape(), args.rank, args.init)
   model = model.cuda()
 
   optimizer = {
@@ -164,7 +127,6 @@ def main():
   }[args.optimizer]()
 
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
-
 
   #optimizer = torch.optim.SGD(
   #    model.parameters(),
@@ -178,12 +140,6 @@ def main():
       shuffle = True,
       #sampler=torch.utils.data.sampler.RandomSampler(),
       pin_memory=True, num_workers=2)
-
-  # valid_queue = torch.utils.data.DataLoader(
-  #     valid_examples, batch_size=args.batch_size,
-  #     shuffle = True,
-  #     #sampler=torch.utils.data.sampler.RandomSampler(),
-  #     pin_memory=True, num_workers=2)
 
   #TODO do we want the learning rate min here?
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
@@ -237,33 +193,24 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
       #b_begin = 0
       #while b_begin < examples.shape[0]:
       for step, input in enumerate(train_queue):
-          ##set current batch
-          # input_batch = actual_examples[
-          #     b_begin:b_begin + batch_size
-          # ].cuda()
           model.train()
           n = input.size(0)
 
           input = Variable(input, requires_grad=False).cuda()
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
-          #compute predictions, ground truth
           predictions, factors = model.forward(input)
           truth = input[:, 2]
 
-          #evaluate loss
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
 
-          #optimise
           optimizer.zero_grad()
           l.backward()
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
-          #b_begin += batch_size
 
-          #progress bar
           bar.update(input.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 
