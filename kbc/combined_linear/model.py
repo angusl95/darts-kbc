@@ -93,7 +93,7 @@ class Cell(nn.Module):
       self._ops += [op]
     self._indices = indices
 
-  def forward(self, s0, drop_prob):
+  def forward(self, s0):
 
     states = [s0] #, s1]
     for i in range(self._steps):
