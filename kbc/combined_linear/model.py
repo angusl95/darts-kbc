@@ -173,7 +173,7 @@ class NetworkKBC(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      s0 = cell(s0, self.drop_path_prob)
+      s0 = cell(s0)
     out = s0
     out = self.projection(out.view(out.size(0),-1))
     out = self.output_drop(out)
@@ -204,7 +204,7 @@ class NetworkKBC(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      s0 = cell(s0, self.drop_path_prob)
+      s0 = cell(s0)
     out = s0
     out = self.projection(out.view(out.size(0),-1))
     out = self.output_drop(out)
@@ -240,7 +240,7 @@ class NetworkKBC(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      s0 = cell(s0, self.drop_path_prob)
+      s0 = cell(s0)
     out = s0
     out = self.projection(out.view(out.size(0),-1))
     out = self.output_drop(out)
