@@ -228,7 +228,7 @@ def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     """
     m = (mrrs['lhs'] + mrrs['rhs']) / 2.
     h = (hits['lhs'] + hits['rhs']) / 2.
-    return {'MRR': m, 'hits@[1,3,10]': h}
+    return {'MRR': m, 'hits@[1,3,10]': h.numpy()}
 
 if __name__ == '__main__':
   main() 
