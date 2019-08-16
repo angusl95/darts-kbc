@@ -55,7 +55,7 @@ parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for th
 parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+:qrgs.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -145,7 +145,8 @@ def main():
     optimizer, float(args.epochs), eta_min=args.learning_rate_min)
   best_acc = 0
   patience = 0
-  curve = {'train': [], 'valid': [], 'test': []}
+  #curve = {'train': [], 'valid': [], 'test': []}
+  curve = {'valid':[], 'test':[]}
 
   for epoch in range(args.epochs):
     scheduler.step()
@@ -157,13 +158,13 @@ def main():
     if (epoch + 1) % args.report_freq == 0:
       valid, test, train = [
               avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
-              for split in ['valid', 'test', 'train']
+              for split in ['valid', 'test']#, 'train']
           ]
       curve['valid'].append(valid)
       curve['test'].append(test)
-      curve['train'].append(train)
+      #curve['train'].append(train)
 
-      print("\t TRAIN: ", train)
+      #print("\t TRAIN: ", train)
       print("\t VALID: ", valid)
       print("\t TEST: ", test)
 
