@@ -55,7 +55,7 @@ parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for th
 parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-:qrgs.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
