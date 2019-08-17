@@ -24,8 +24,8 @@ PRIMITIVES = [
     'conv_5x5',
     'conv_7x7',
     'dil_conv_3x3',
-    'dil_conv_5x5',
-    'conv_7x1_1x7'
+    'dil_conv_5x5'
+    #'conv_7x1_1x7'
     #'linear'
 ]
 
