@@ -200,13 +200,12 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
       bar.set_description(f'train loss')
       for step, input in enumerate(train_queue):
           model.train()
-          n = input.size(0)
 
-          input = Variable(input, requires_grad=False).cuda()
-          target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
+          input_var = Variable(input, requires_grad=False).cuda()
+          target_var = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
-          predictions, factors = model.forward(input)
-          truth = input[:, 2]
+          predictions, factors = model.forward(input_var)
+          truth = input_var[:, 2]
 
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
@@ -217,7 +216,7 @@ def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer,
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
 
-          bar.update(input.shape[0])
+          bar.update(input_var.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 
 def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):

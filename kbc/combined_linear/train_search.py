@@ -150,7 +150,8 @@ def main():
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, float(args.epochs), eta_min=args.learning_rate_min)
   best_acc = 0
-  curve = {'train': [], 'valid': [], 'test': []}
+  patience = 0
+  curve = {'valid': [], 'test': []}
 
   architect = Architect(model, args)
 
@@ -168,15 +169,15 @@ def main():
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)
 
     if (epoch + 1) % args.report_freq == 0:
-      valid, test, train = [
+      valid, test = [
               avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
-              for split in ['valid', 'test', 'train']
+              for split in ['valid', 'test']
           ]
       curve['valid'].append(valid)
       curve['test'].append(test)
-      curve['train'].append(train)
+      #curve['train'].append(train)
 
-      print("\t TRAIN: ", train)
+      #print("\t TRAIN: ", train)
       print("\t VALID: ", valid)
       print("\t TEST: ", test)
 
@@ -184,6 +185,9 @@ def main():
       if valid['MRR'] > best_acc:
         best_acc = valid['MRR']
         is_best = True
+        patience = 0
+      else:
+        patience +=1
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
 
@@ -196,20 +200,19 @@ def train_epoch(train_examples,train_queue, valid_queue,
       for step, input in enumerate(train_queue):
 
           model.train()
-          n = input.size(0)
 
           #TODO is this okay???
-          input = Variable(input, requires_grad=False).cuda()
-          target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
+          input_var = Variable(input, requires_grad=False).cuda()
+          target_var = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
           input_search = next(iter(valid_queue))
           input_search = Variable(input_search, requires_grad=False).cuda()
           target_search = Variable(input_search[:,2], requires_grad=False).cuda()#async=True)
 
-          architect.step(input, target, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
+          architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
 
-          predictions, factors = model.forward(input)
-          truth = input[:, 2]
+          predictions, factors = model.forward(input_var)
+          truth = input_var[:, 2]
 
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
@@ -220,7 +223,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
 
-          bar.update(input.shape[0])
+          bar.update(input_var.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 
           #TODO from DARTS train fn - grad clipping, accuracy metrics?
