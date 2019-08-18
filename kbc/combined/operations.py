@@ -43,7 +43,7 @@ class DilConv(nn.Module):
   def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine=True):
     super(DilConv, self).__init__()
     self.op = nn.Sequential(
-      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=True),
+      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
       nn.ReLU(inplace=False),
