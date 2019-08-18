@@ -59,7 +59,7 @@ parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for th
 parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S%f"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -104,8 +104,8 @@ def main():
 
   CLASSES = dataset.get_shape()[0]
 
-  # criterion = nn.CrossEntropyLoss(reduction='mean')
-  criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
+  criterion = nn.CrossEntropyLoss(reduction='mean')
+  #criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion = criterion.cuda()
 
   regularizer = {
@@ -201,7 +201,6 @@ def train_epoch(train_examples,train_queue, valid_queue,
 
           model.train()
 
-          #TODO is this okay???
           input_var = Variable(input, requires_grad=False).cuda()
           target_var = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
@@ -215,8 +214,8 @@ def train_epoch(train_examples,train_queue, valid_queue,
           truth = input_var[:, 2]
 
           l_fit = loss(predictions, truth)
-          l_reg = regularizer.forward(factors)
-          l = l_fit + l_reg
+          #l_reg = regularizer.forward(factors)
+          l = l_fit# + l_reg
 
           optimizer.zero_grad()
           l.backward()

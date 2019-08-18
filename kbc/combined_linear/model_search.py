@@ -270,9 +270,11 @@ class Network(KBCModel):
     #TODO: definitely just alias for forward method?
     logits, factors = self(input)
     l_fit = self._criterion(logits, target)
-    l_reg = self._regularizer.forward(factors)
+
+    #l_reg = self._regularizer.forward(factors)
+    
     #return self._criterion(logits, target) 
-    return l_fit + l_reg
+    return l_fit #+ l_reg
 
   def _initialize_alphas(self):
     #k = sum(1 for i in range(self._steps) for n in range(1+i))

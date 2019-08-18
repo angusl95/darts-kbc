@@ -71,7 +71,6 @@ class SepConv(nn.Module):
   def forward(self, x):
     return self.op(x)
 
-
 class Conv(nn.Module):
     
   def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=True):
