@@ -29,7 +29,7 @@ parser.add_argument('--learning_rate', type=float, default=0.025, help='init lea
 parser.add_argument('--learning_rate_min', type=float, default=0.001, help='min learning rate')
 parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
 parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight decay')
-parser.add_argument('--report_freq', type=float, default=5, help='report frequency')
+parser.add_argument('--report_freq', type=float, default=3, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
 parser.add_argument('--channels', type=int, default=36, help='num of channels')
@@ -44,13 +44,9 @@ parser.add_argument('--interleaved', action='store_true', default=False, help='i
 parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
 parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
-
+parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
-parser.add_argument(
-    '--dataset', choices=datasets,
-    help="Dataset in {}".format(datasets)
-)
-
+parser.add_argument('--dataset', choices=datasets, help="Dataset in {}".format(datasets))
 regularizers = ['N3', 'N2']
 parser.add_argument('--regularizer', choices=regularizers, default='N3', help="Regularizer in {}".format(regularizers))
 parser.add_argument('--emb_dim', default=200, type=int, help="Embedding dimension")
@@ -110,7 +106,6 @@ def main():
   # model.to(device)
 
   CLASSES = dataset.get_shape()[0]
-
   criterion = nn.CrossEntropyLoss(reduction='mean')
   #criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion = criterion.cuda()
