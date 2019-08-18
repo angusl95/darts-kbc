@@ -126,7 +126,7 @@ class Cell(nn.Module):
 class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
-    sizes: Tuple[int, int, int], rank: int, init_size: float = 1e-3,
+    interleaved, sizes: Tuple[int, int, int], emb_dim: int, init_size: float = 1e-3,
     reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
     #TODO: remove stem multiplier from args?
     super(Network, self).__init__()
@@ -138,13 +138,17 @@ class Network(KBCModel):
     self._steps = steps
     self._multiplier = multiplier
     self._stem_multiplier = stem_multiplier
-    self.rank = rank
+    self.emb_dim = emb_dim
+    if self.emb_dim % 20 != 0:
+      raise ValueError('embedding size must be divisble by 20')
+    self.emb_height = self.emb_dim//20
     self.sizes = sizes
     self._init_size = init_size
+    self._interleaved = interleaved
     self._reduction_flag = reduction_flag
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
-            nn.Embedding(s, rank)#, sparse=True)
+            nn.Embedding(s, emb_dim)#, sparse=True)
             for s in sizes[:2]
         ])
     self.embeddings[0].weight.data *= init_size
@@ -174,15 +178,20 @@ class Network(KBCModel):
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
-    self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(C_prev, self.rank, bias=False)
+    self.input_drop = torch.nn.Dropout(p=0.2)
+    self.input_bn = torch.nn.BatchNorm2d(1, affine=False)
+    #self.global_pooling = nn.AdaptiveAvgPool2d(1)
+    self.projection = nn.Linear(C_prev, self.emb_dim, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
+    self.output_bn = nn.BatchNorm1d(self.emb_dim, affine=False)
+    self.output_drop = torch.nn.Dropout(p=0.3)
     self._initialize_alphas()
 
   def new(self):
-    model_new = Network(self._C, self._num_classes, self._layers, self._criterion, self._regularizer,
-      self.sizes, self.rank, self._init_size, self._reduction_flag, self._steps, 
+    model_new = Network(self._C, self._num_classes, self._layers, self._criterion, 
+      self._regularizer, self._interleaved,
+      self.sizes, self.emb_dim, self._init_size, self._reduction_flag, self._steps, 
       self._multiplier, self._stem_multiplier).cuda()
     for x, y in zip(model_new.arch_parameters(), self.arch_parameters()):
         x.data.copy_(y.data)
@@ -192,14 +201,21 @@ class Network(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = input
+
+    if self._interleaved:
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      s0 = torch.cat([lhs,rel],3)
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+    else:
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = self.input_bn(s0)
+    s0 = self.input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
+    s1 = s0
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -207,9 +223,12 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
-    #out = s1
-    out = self.projection(out.view(out.size(0),-1))
+    #out = self.global_pooling(s1)
+    out = s1.view(s1.size(0),1,-1)
+    out = self.projection(out)
+    out = out.squeeze()
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = torch.sum(
         out * rhs, 1, keepdim=True
@@ -220,26 +239,37 @@ class Network(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-
-
     to_score = self.embeddings[0].weight
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
 
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = input
+    if self._interleaved:
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      s0 = torch.cat([lhs,rel],3)
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+    else:
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = self.input_bn(s0)
+    s0 = self.input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
+    s1 = s0
+    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.emb_dim * 2)//(16*3)])
+    
     for i, cell in enumerate(self.cells):
       if cell.reduction:
         weights = F.softmax(self.alphas_reduce, dim=-1)
       else:
         weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+    #out = self.global_pooling(s1)
     # logits = self.classifier(out.view(out.size(0),-1))
     # return logits
-    out = self.projection(out.view(out.size(0),-1))
+    out = s1.view(s1.size(0),1, -1)
+    out = self.projection(out)
+    out = out.squeeze()
+    out = self.output_drop(out)
+    out = self.output_bn(out)
     out = F.relu(out)
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
@@ -252,12 +282,21 @@ class Network(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    lhs = lhs.view([lhs.size(0),1,16,self.rank//16])
-    rel = rel.view([rel.size(0),1,16,self.rank//16])
-    combined = torch.cat([lhs,rel],3)
-    input = combined.view([lhs.size(0),1,32,-1])
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.rank * 2)//(16*3)])
-    s0 = s1 = input
+    lhs = lhs.view([lhs.size(0),1,16,self.emb_dim//16])
+    rel = rel.view([rel.size(0),1,16,self.emb_dim//16])
+    if self._interleaved:
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      s0 = torch.cat([lhs,rel],3)
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+    else:
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      s0 = torch.cat([lhs,rel], 2)
+    s0 = self.input_bn(s0)
+    s0 = self.input_drop(s0)
+    s0 = s0.expand(-1,self._C, -1, -1)
+    s1 = s0
 
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -265,8 +304,14 @@ class Network(KBCModel):
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    out = self.global_pooling(s1)
+    #out = self.global_pooling(s1)
     #out = s1
+    out = s1.view(s1.size(0),1, -1)
+    out = self.projection(out)
+    out = out.squeeze()
+    out = self.output_drop(out)
+    out = self.output_bn(out)
+    out = F.relu(out)
     out = self.projection(out.view(out.size(0),-1))
     out = F.relu(out)
 
