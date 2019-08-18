@@ -149,11 +149,15 @@ TestNet = Genotype(normal=[('none', 1), ('none', 0), ('none', 1), ('none', 0), (
 
 ConvE = Genotype(
     normal = [
-        ('skip_connect', 0),
-    ('skip_connect', 1),
-    ('skip_connect', 2),
-    ('conv_3x3', 3)],
-    normal_concat = [3],
+        ('conv_3x3', 0),
+    ('zero', 1),
+    ('zero', 0),
+    ('zero', 1),
+    ('zero', 0),
+    ('zero', 1),
+    ('zero', 0),
+    ('zero', 1)],
+    normal_concat = [2,3,4,5],
   reduce = [
     ('avg_pool_3x3', 0),
     ('sep_conv_3x3', 1),

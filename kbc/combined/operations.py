@@ -15,10 +15,11 @@ OPS = {
   'conv_5x5'     : lambda C, stride, affine: Conv(C, C, 5, stride, 2, affine=affine),
   'conv_7x7'     : lambda C, stride, affine: Conv(C, C, 7, stride, 3, affine=affine),
   'conv_7x1_1x7' : lambda C, stride, affine: nn.Sequential(
-    nn.ReLU(inplace=False),
     nn.Conv2d(C, C, (1,7), stride=(1, stride), padding=(0, 3), bias=False),
     nn.Conv2d(C, C, (7,1), stride=(stride, 1), padding=(3, 0), bias=False),
-    nn.BatchNorm2d(C, affine=affine)
+    nn.BatchNorm2d(C, affine=affine),
+    nn.ReLU(inplace=False),
+    nn.Dropout2d(p=0.2)
     ),
   'linear' : lambda C, stride, affine: nn.Linear(C, C),
   'identity' : lambda C, stride, affine: Identity()
@@ -42,10 +43,11 @@ class DilConv(nn.Module):
   def __init__(self, C_in, C_out, kernel_size, stride, padding, dilation, affine=True):
     super(DilConv, self).__init__()
     self.op = nn.Sequential(
-      nn.ReLU(inplace=False),
-      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=False),
+      nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=C_in, bias=True),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
+      nn.ReLU(inplace=False),
+      nn.Dropout2d(p=0.2)
       )
 
   def forward(self, x):
@@ -57,14 +59,16 @@ class SepConv(nn.Module):
   def __init__(self, C_in, C_out, kernel_size, stride, padding, affine=True):
     super(SepConv, self).__init__()
     self.op = nn.Sequential(
-      nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_in, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_in, affine=affine),
       nn.ReLU(inplace=False),
+      nn.Dropout2d(p=0.2),
       nn.Conv2d(C_in, C_in, kernel_size=kernel_size, stride=1, padding=padding, groups=C_in, bias=False),
       nn.Conv2d(C_in, C_out, kernel_size=1, padding=0, bias=False),
       nn.BatchNorm2d(C_out, affine=affine),
+      nn.ReLU(inplace=False),
+      nn.Dropout2d(p=0.2)
       )
 
   def forward(self, x):
@@ -78,8 +82,9 @@ class Conv(nn.Module):
     self.op = nn.Sequential(
       #nn.ReLU(inplace=False),
       nn.Conv2d(C_in, C_out, kernel_size=kernel_size, stride=stride, padding=padding, groups=C_in, bias=False),
-      #nn.BatchNorm2d(C_out, affine=affine),
-      nn.ReLU(inplace=False)
+      nn.BatchNorm2d(C_out, affine=affine),
+      nn.ReLU(inplace=False),
+      nn.Dropout2d(p=0.2)
       )
 
   def forward(self, x):
@@ -108,7 +113,7 @@ class Zero(nn.Module):
 
 class Linear(nn.Module):
 
-  def __init__(self)
+  def __init__(self):
     super(Linear, self).__init__()
 
   def forward(self, x):

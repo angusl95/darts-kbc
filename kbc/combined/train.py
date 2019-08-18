@@ -32,18 +32,16 @@ parser.add_argument('--weight_decay', type=float, default=3e-4, help='weight dec
 parser.add_argument('--report_freq', type=float, default=5, help='report frequency')
 parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
 parser.add_argument('--epochs', type=int, default=600, help='num of training epochs')
-parser.add_argument('--init_channels', type=int, default=36, help='num of init channels')
-parser.add_argument('--layers', type=int, default=5, help='total number of layers')
+parser.add_argument('--channels', type=int, default=36, help='num of channels')
+parser.add_argument('--layers', type=int, default=1, help='total number of layers')
 parser.add_argument('--model_path', type=str, default='saved_models', help='path to save the model')
-parser.add_argument('--auxiliary', action='store_true', default=False, help='use auxiliary tower')
-parser.add_argument('--auxiliary_weight', type=float, default=0.4, help='weight for auxiliary loss')
-parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
-parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
 parser.add_argument('--drop_path_prob', type=float, default=0.2, help='drop path probability')
 parser.add_argument('--save', type=str, default='EXP', help='experiment name')
 parser.add_argument('--seed', type=int, default=0, help='random seed')
 parser.add_argument('--arch', type=str, default='KBCNet', help='which architecture to use')
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
+parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
+parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
 parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 
@@ -52,44 +50,19 @@ parser.add_argument(
     '--dataset', choices=datasets,
     help="Dataset in {}".format(datasets)
 )
-# models = ['CP', 'ComplEx']
-# parser.add_argument(
-#     '--model', choices=models,
-#     help="Model in {}".format(models)
-# )
+
 regularizers = ['N3', 'N2']
-parser.add_argument(
-    '--regularizer', choices=regularizers, default='N3',
-    help="Regularizer in {}".format(regularizers)
-)
-parser.add_argument(
-    '--rank', default=1000, type=int,
-    help="Factorization rank."
-)
-parser.add_argument(
-    '--init', default=1e-3, type=float,
-    help="Initial scale"
-)
-parser.add_argument(
-    '--reg', default=0, type=float,
-    help="Regularization weight"
-)
+parser.add_argument('--regularizer', choices=regularizers, default='N3', help="Regularizer in {}".format(regularizers))
+parser.add_argument('--emb_dim', default=200, type=int, help="Embedding dimension")
+parser.add_argument('--init', default=1e-3, type=float, help="Initial scale")
+parser.add_argument('--reg', default=0, type=float, help="Regularization weight")
 optimizers = ['Adagrad', 'Adam', 'SGD']
-parser.add_argument(
-    '--optimizer', choices=optimizers, default='Adagrad',
-    help="Optimizer in {}".format(optimizers)
-)
-parser.add_argument(
-    '--decay1', default=0.9, type=float,
-    help="decay rate for the first moment estimate in Adam"
-)
-parser.add_argument(
-    '--decay2', default=0.999, type=float,
-    help="decay rate for second moment estimate in Adam"
-)
+parser.add_argument('--optimizer', choices=optimizers, default='Adagrad', help="Optimizer in {}".format(optimizers))
+parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for the first moment estimate in Adam")
+parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S%f"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -98,6 +71,21 @@ logging.basicConfig(stream=sys.stdout, level=logging.INFO,
 fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
+
+class CrossEntropyLabelSmooth(nn.Module):
+
+  def __init__(self, num_classes, epsilon):
+    super(CrossEntropyLabelSmooth, self).__init__()
+    self.num_classes = num_classes
+    self.epsilon = epsilon
+    self.logsoftmax = nn.LogSoftmax(dim=1)
+
+  def forward(self, inputs, targets):
+    log_probs = self.logsoftmax(inputs)
+    targets = torch.zeros_like(log_probs).scatter_(1, targets.unsqueeze(1), 1)
+    targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
+    loss = (-targets * log_probs).mean(0).sum()
+    return loss
 
 def main():
   if not torch.cuda.is_available():
@@ -115,7 +103,6 @@ def main():
 
   dataset = Dataset(args.dataset)
   train_examples = torch.from_numpy(dataset.get_train().astype('int64'))
-  # valid_examples = torch.from_numpy(dataset.get_valid().astype('int64'))
 
   #TODO: does below need reintroducing somewhere?
 
@@ -125,6 +112,7 @@ def main():
   CLASSES = dataset.get_shape()[0]
 
   criterion = nn.CrossEntropyLoss(reduction='mean')
+  #criterion = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
   criterion = criterion.cuda()
 
   regularizer = {
@@ -133,14 +121,15 @@ def main():
   }[args.regularizer]
 
   genotype = eval("genotypes.%s" % args.arch)
-  model = Network(args.init_channels,
-    CLASSES, args.layers, criterion, regularizer, genotype,
-    dataset.get_shape(), args.rank, args.init, args.reduction)
+  logging.info('genotype = %s', genotype)
+  model = Network(args.channels,
+    CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
+    dataset.get_shape(), args.emb_dim, args.init, args.reduction)
   model = model.cuda()
 
   optimizer = {
     'Adagrad': lambda: optim.Adagrad(model.parameters(), lr=args.learning_rate),
-    'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, betas=(args.decay1, args.decay2)),
+    'Adam': lambda: optim.Adam(model.parameters(), lr=args.learning_rate, weight_decay = args.weight_decay, betas=(args.decay1, args.decay2)),
     'SGD': lambda: optim.SGD(model.parameters(), lr=args.learning_rate)
   }[args.optimizer]()
 
@@ -160,17 +149,12 @@ def main():
       #sampler=torch.utils.data.sampler.RandomSampler(),
       pin_memory=True, num_workers=2)
 
-  # valid_queue = torch.utils.data.DataLoader(
-  #     valid_examples, batch_size=args.batch_size,
-  #     shuffle = True,
-  #     #sampler=torch.utils.data.sampler.RandomSampler(),
-  #     pin_memory=True, num_workers=2)
-
   #TODO do we want the learning rate min here?
   scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
     optimizer, float(args.epochs), eta_min=args.learning_rate_min)
   best_acc = 0
-  curve = {'train': [], 'valid': [], 'test': []}
+  patience = 0
+  curve = {'valid': [], 'test': []}
 
   for epoch in range(args.epochs):
     scheduler.step()
@@ -178,14 +162,6 @@ def main():
     logging.info('epoch %d lr %e', epoch, lr)
     model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
 
-    #train_acc, train_obj = train(train_queue, model, criterion, optimizer)
-    #logging.info('train_acc %f', train_acc)
-
-    #valid_acc, valid_obj = infer(valid_queue, model, criterion)
-    #logging.info('valid_acc %f', valid_acc)
-
-    #print('examples shape')
-    #print(examples.shape)
     train_epoch(train_examples, train_queue, model, optimizer, 
       regularizer, args.batch_size)
     if (epoch + 1) % args.report_freq == 0:
@@ -195,7 +171,7 @@ def main():
           ]
       curve['valid'].append(valid)
       curve['test'].append(test)
-      curve['train'].append(train)
+      #curve['train'].append(train)
 
       print("\t TRAIN: ", train)
       print("\t VALID : ", valid)
@@ -204,6 +180,9 @@ def main():
       if valid['MRR'] > best_acc:
         best_acc = valid['MRR']
         is_best = True
+        patience = 0
+      else:
+        patience +=1
 
       utils.save_checkpoint({
         'epoch': epoch + 1,
@@ -212,78 +191,39 @@ def main():
         'optimizer' : optimizer.state_dict(),
         }, is_best, args.save)
 
+      if patience >= 5:
+        print('early stopping...')
+        break
+
     utils.save(model, os.path.join(args.save, 'weights.pt'))
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
-
-
-# def train(train_queue, model, criterion, optimizer):
-#   objs = utils.AvgrageMeter()
-#   top1 = utils.AvgrageMeter()
-#   top5 = utils.AvgrageMeter()
-#   model.train()
-
-#   for step, (input, target) in enumerate(train_queue):
-#     input = Variable(input).cuda()
-#     target = Variable(target).cuda(async=True)
-
-#     optimizer.zero_grad()
-#     logits, logits_aux = model(input)
-#     loss = criterion(logits, target)
-#     if args.auxiliary:
-#       loss_aux = criterion(logits_aux, target)
-#       loss += args.auxiliary_weight*loss_aux
-#     loss.backward()
-#     nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
-#     optimizer.step()
-
-#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-#     n = input.size(0)
-#     objs.update(loss.data[0], n)
-#     top1.update(prec1.data[0], n)
-#     top5.update(prec5.data[0], n)
-
-#     if step % args.report_freq == 0:
-#       logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-#   return top1.avg, objs.avg
+  with open(os.path.join(args.save, 'curve.pkl'), 'wb') as f:
+    pickle.dump(curve, f, pickle.HIGHEST_PROTOCOL)
 
 def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
-  #actual_examples = examples[torch.randperm(examples.shape[0]), :]
   loss = nn.CrossEntropyLoss(reduction='mean')
   with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
-      #b_begin = 0
-      #while b_begin < examples.shape[0]:
       for step, input in enumerate(train_queue):
-          ##set current batch
-          # input_batch = actual_examples[
-          #     b_begin:b_begin + batch_size
-          # ].cuda()
           model.train()
-          n = input.size(0)
 
           input = Variable(input, requires_grad=False).cuda()
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
-          #compute predictions, ground truth
           predictions, factors = model.forward(input)
           truth = input[:, 2]
 
-          #evaluate loss
           l_fit = loss(predictions, truth)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
 
-          #optimise
           optimizer.zero_grad()
           l.backward()
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
-          #b_begin += batch_size
 
-          #progress bar
           bar.update(input.shape[0])
           bar.set_postfix(loss=f'{l.item():.0f}')
 
@@ -296,33 +236,7 @@ def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     """
     m = (mrrs['lhs'] + mrrs['rhs']) / 2.
     h = (hits['lhs'] + hits['rhs']) / 2.
-    return {'MRR': m, 'hits@[1,3,10]': h}
-
-# def infer(valid_queue, model, criterion):
-#   objs = utils.AvgrageMeter()
-#   top1 = utils.AvgrageMeter()
-#   top5 = utils.AvgrageMeter()
-#   model.eval()
-
-#   for step, (input, target) in enumerate(valid_queue):
-#     input = Variable(input, volatile=True).cuda()
-#     target = Variable(target, volatile=True).cuda(async=True)
-
-#     logits, _ = model(input)
-#     loss = criterion(logits, target)
-
-#     prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-#     n = input.size(0)
-#     objs.update(loss.data[0], n)
-#     top1.update(prec1.data[0], n)
-#     top5.update(prec5.data[0], n)
-
-#     if step % args.report_freq == 0:
-#       logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-#   return top1.avg, objs.avg
-
+    return {'MRR': m, 'hits@[1,3,10]': h.numpy()}
 
 if __name__ == '__main__':
   main() 
-
