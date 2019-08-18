@@ -181,7 +181,7 @@ class Network(KBCModel):
     self.input_drop = torch.nn.Dropout(p=0.2)
     self.input_bn = torch.nn.BatchNorm2d(1, affine=False)
     #self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(C_prev, self.emb_dim, bias=False)
+    self.projection = nn.Linear(2*self.emb_dim*C_prev, self.emb_dim)#, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
     self.output_bn = nn.BatchNorm1d(self.emb_dim, affine=False)
