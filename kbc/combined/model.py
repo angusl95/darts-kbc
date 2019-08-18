@@ -141,6 +141,9 @@ class NetworkKBC(KBCModel):
     self._multiplier = multiplier
     self._stem_multiplier = stem_multiplier
     self.emb_dim = emb_dim
+    if self.emb_dim % 20 != 0:
+      raise ValueError('embedding size must be divisble by 20')
+    self.emb_height = self.emb_dim//20
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
