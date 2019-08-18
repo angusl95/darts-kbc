@@ -282,8 +282,6 @@ class Network(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    lhs = lhs.view([lhs.size(0),1,16,self.emb_dim//16])
-    rel = rel.view([rel.size(0),1,16,self.emb_dim//16])
     if self._interleaved:
       lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
       rel = rel.view([rel.size(0),1,self.emb_height,20])
