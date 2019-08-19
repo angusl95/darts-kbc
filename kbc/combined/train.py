@@ -198,12 +198,11 @@ def main():
 
 def train_epoch(train_examples, train_queue, model, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, verbose: bool = True):
+  model.train()
   loss = nn.CrossEntropyLoss(reduction='mean')
   with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
       for step, input in enumerate(train_queue):
-          model.train()
-
           input = Variable(input, requires_grad=False).cuda()
           target = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
