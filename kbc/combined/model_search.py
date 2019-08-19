@@ -254,7 +254,6 @@ class Network(KBCModel):
     s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
     s1 = s0
-    #input = torch.cat([lhs, rel], 1).view([lhs.size(0), 3, 16, (self.emb_dim * 2)//(16*3)])
     
     for i, cell in enumerate(self.cells):
       if cell.reduction:
@@ -310,7 +309,7 @@ class Network(KBCModel):
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
-    out = self.projection(out.view(out.size(0),-1))
+    out = self.projection(out.view(out.size(0),1,-1))
     out = F.relu(out)
 
     return out
