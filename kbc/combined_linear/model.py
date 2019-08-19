@@ -70,10 +70,9 @@ class KBCModel(nn.Module, ABC):
                 c_begin += chunk_size
         return ranks
 
-
 class Cell(nn.Module):
 
-  def __init__(self, genotype, emb_dim, C):
+  def __init__(self, genotype, emb_dim, C, dropout=0.2):
     super(Cell, self).__init__()
 
     op_names, indices = zip(*genotype.normal)
@@ -89,7 +88,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
       stride = 1
-      op = OPS[name](C, stride,self._emb_dim, True)
+      op = OPS[name](C, stride,self._emb_dim, True, dropout)
       self._ops += [op]
     self._indices = indices
 
