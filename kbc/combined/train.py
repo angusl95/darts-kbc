@@ -159,16 +159,17 @@ def main():
     train_epoch(train_examples, train_queue, model, optimizer, 
       regularizer, args.batch_size)
     if (epoch + 1) % args.report_freq == 0:
-      valid, test, train = [
+      valid, test = [
               avg_both(*dataset.eval(model, split, -1 if split != 'train' else 50000))
-              for split in ['valid', 'test', 'train']
+              for split in ['valid', 'test']
           ]
       curve['valid'].append(valid)
       curve['test'].append(test)
       #curve['train'].append(train)
 
-      print("\t TRAIN: ", train)
+      #print("\t TRAIN: ", train)
       print("\t VALID : ", valid)
+      print("\t TEST: ", test)
 
       is_best = False
       if valid['MRR'] > best_acc:
