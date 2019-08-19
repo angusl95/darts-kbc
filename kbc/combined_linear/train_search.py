@@ -208,8 +208,9 @@ def train_epoch(train_examples,train_queue, valid_queue,
           input_search = Variable(input_search, requires_grad=False).cuda()
           target_search = Variable(input_search[:,2], requires_grad=False).cuda()#async=True)
 
+          model.eval()
           architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
-
+          model.train()
           predictions, factors = model.forward(input_var)
           truth = input_var[:, 2]
 
