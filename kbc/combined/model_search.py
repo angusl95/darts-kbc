@@ -309,8 +309,6 @@ class Network(KBCModel):
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
-    out = self.projection(out.view(out.size(0),1,-1))
-    out = F.relu(out)
 
     return out
 
