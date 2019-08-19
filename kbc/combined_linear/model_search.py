@@ -74,11 +74,11 @@ class KBCModel(nn.Module, ABC):
 
 class MixedOp(nn.Module):
 
-  def __init__(self, C, stride, emb_dim):
+  def __init__(self, C, stride, emb_dim, dropout):
     super(MixedOp, self).__init__()
     self._ops = nn.ModuleList()
     for primitive in PRIMITIVES:
-      op = OPS[primitive](C, stride, emb_dim, False)
+      op = OPS[primitive](C, stride, emb_dim, False, dropout)
       #TODO reintroduce this?
       if 'pool' in primitive:
         op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
@@ -90,15 +90,16 @@ class MixedOp(nn.Module):
 
 class Cell(nn.Module):
 
-  def __init__(self, steps, emb_dim, C):
+  def __init__(self, steps, emb_dim, C, dropout=0.2):
     super(Cell, self).__init__()
     self._steps = steps
     self._emb_dim = emb_dim
+    self._dropout = dropout
     self._ops = nn.ModuleList()
     for i in range(self._steps):
       for j in range(1):
         stride = 1
-        op = MixedOp(C, stride, emb_dim)
+        op = MixedOp(C, stride, emb_dim, self._dropout)
         self._ops.append(op)
 
   def forward(self, s0, weights):
