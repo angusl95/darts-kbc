@@ -21,8 +21,8 @@ OPS = {
     nn.ReLU(inplace=False),
     nn.Dropout2d(p=dropout)
     ),
-  'linear' : lambda C, stride, emb_dim, affine: LinearOp(C, emb_dim, affine, dropout),
-  'identity' : lambda C, stride, emb_dim, affine: Identity()
+  'linear' : lambda C, stride, emb_dim, affine, dropout=0: LinearOp(C, emb_dim, affine, dropout),
+  'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
 class ReLUConvBN(nn.Module):
