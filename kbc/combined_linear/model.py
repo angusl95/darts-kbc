@@ -79,6 +79,8 @@ class Cell(nn.Module):
     concat = genotype.normal_concat
     self._emb_dim = emb_dim
     self._compile(C, op_names, indices, concat)
+    self._dropout = dropout
+
 
   def _compile(self, C, op_names, indices, concat):
     assert len(op_names) == len(indices)
@@ -88,7 +90,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
       stride = 1
-      op = OPS[name](C, stride,self._emb_dim, True, dropout)
+      op = OPS[name](C, stride,self._emb_dim, True, self._dropout)
       self._ops += [op]
     self._indices = indices
 
