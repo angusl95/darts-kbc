@@ -78,8 +78,8 @@ class Cell(nn.Module):
     op_names, indices = zip(*genotype.normal)
     concat = genotype.normal_concat
     self._emb_dim = emb_dim
-    self._compile(C, op_names, indices, concat)
     self._dropout = dropout
+    self._compile(C, op_names, indices, concat)
 
 
   def _compile(self, C, op_names, indices, concat):
