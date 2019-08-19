@@ -59,6 +59,7 @@ class Dataset(object):
             self, model: KBCModel, split: str, n_queries: int = -1, missing_eval: str = 'both',
             at: Tuple[int] = (1, 3, 10)
     ):
+        model.eval()
         test = self.get_examples(split)
         examples = torch.from_numpy(test.astype('int64')).cuda()
         missing = [missing_eval]
