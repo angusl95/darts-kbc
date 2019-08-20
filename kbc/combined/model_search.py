@@ -190,80 +190,56 @@ class Network(KBCModel):
         x.data.copy_(y.data)
     return model_new
 
-  def score(self, x):
-    lhs = self.embeddings[0](x[:, 0])
-    rel = self.embeddings[1](x[:, 1])
-    rhs = self.embeddings[0](x[:, 2])
-    to_score = self.embeddings[0].weight
-
+  def lhs_rel_forward(self, lhs, rel):
+    lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+    rel = rel.view([rel.size(0),1,self.emb_height,20])
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel],3)
       s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
     else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
       s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
-    s0 = self.input_drop(s0)
-    s0 = s0.expand(-1,self._C, -1, -1)
-    s1 = s0
+    # s0 = self.input_bn(s0)
+    # s0 = self.input_drop(s0)
+    # s0 = s0.expand(-1,self._C, -1, -1)
+    # s1 = s0
 
+    s0 = lhs
+    s1 = rel
     for i, cell in enumerate(self.cells):
       if cell.reduction:
           weights = F.softmax(self.alphas_reduce, dim=-1)
       else:
           weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
-    #out = self.global_pooling(s1)
     out = s1.view(s1.size(0),1,-1)
     out = self.projection(out)
     out = out.squeeze()
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
+    #return s0, s1
+    return out
+
+  def score(self, x):
+    lhs = self.embeddings[0](x[:, 0])
+    rel = self.embeddings[1](x[:, 1])
+    rhs = self.embeddings[0](x[:, 2])
+    out = lhs_rel_forward(lhs, rel)
     out = torch.sum(
         out * rhs, 1, keepdim=True
     )
     return out
 
   def forward(self, x):
+    #return both output and embeddings for N3 regularisation if used
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
     to_score = self.embeddings[0].weight
 
-    if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
-      s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
-      s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
-    s0 = self.input_drop(s0)
-    s0 = s0.expand(-1,self._C, -1, -1)
-    s1 = s0
-    
-    for i, cell in enumerate(self.cells):
-      if cell.reduction:
-        weights = F.softmax(self.alphas_reduce, dim=-1)
-      else:
-        weights = F.softmax(self.alphas_normal, dim=-1)
-      s0, s1 = s1, cell(s0, s1, weights)
-    #out = self.global_pooling(s1)
-    # logits = self.classifier(out.view(out.size(0),-1))
-    # return logits
-    out = s1.view(s1.size(0),1, -1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
+    out = lhs_rel_forward(lhs,rel)
     out = out @ to_score.transpose(0,1)
+
     return out, (lhs,rel,rhs)
 
   def get_rhs(self, chunk_begin: int, chunk_size: int):
@@ -274,34 +250,7 @@ class Network(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
-      s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
-      s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
-    s0 = self.input_drop(s0)
-    s0 = s0.expand(-1,self._C, -1, -1)
-    s1 = s0
-
-    for i, cell in enumerate(self.cells):
-      if cell.reduction:
-          weights = F.softmax(self.alphas_reduce, dim=-1)
-      else:
-          weights = F.softmax(self.alphas_normal, dim=-1)
-      s0, s1 = s1, cell(s0, s1, weights)
-    #out = self.global_pooling(s1)
-    #out = s1
-    out = s1.view(s1.size(0),1, -1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
+    out = lhs_rel_forward(lhs, rel)
 
     return out
 

@@ -188,91 +188,51 @@ class NetworkKBC(KBCModel):
     self.output_bn = nn.BatchNorm1d(self.emb_dim)
     self.output_drop = torch.nn.Dropout(p=0.3)
 
-  def preprocess(self, lhs, rel):
-    if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
-      s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
-      s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
-    s0 = self.input_drop(s0)
-    s0 = s0.expand(-1,self._C, -1, -1)
-    s1 = s0
+  def lhs_rel_forward(self, lhs, rel):
+    #lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+    #rel = rel.view([rel.size(0),1,self.emb_height,20])
+
+    # if self._interleaved:
+    #   s0 = torch.cat([lhs,rel],3)
+    #   s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+    # else:
+    #   s0 = torch.cat([lhs,rel], 2)
+    # s0 = self.input_bn(s0)
+    # s0 = self.input_drop(s0)
+    # s0 = s0.expand(-1,self._C, -1, -1)
+    # s1 = s0
+    
+    s0 = lhs
+    s1 = rel
+    for i, cell in enumerate(self.cells):
+      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+    out = s1.view(s1.size(0),1,-1)
+    out = self.projection(out)
+    out = out.squeeze()
+    out = self.output_drop(out)
+    out = self.output_bn(out)
+    out = F.relu(out)
     #return s0, s1
-    return lhs, rel
+    return out
 
   def score(self, x):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    to_score = self.embeddings[0].weight
+    #to_score = self.embeddings[0].weight
 
-    # if self._interleaved:
-    #   lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    #   rel = rel.view([rel.size(0),1,self.emb_height,20])
-    #   s0 = torch.cat([lhs,rel],3)
-    #   s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    # else:
-    #   lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    #   rel = rel.view([rel.size(0),1,self.emb_height,20])
-    #   s0 = torch.cat([lhs,rel], 2)
-    # s0 = self.input_bn(s0)
-    # s0 = self.input_drop(s0)
-    # s0 = s0.expand(-1,self._C, -1, -1)
-    # s1 = s0
-
-    s0, s1 = self.preprocess(lhs, rel)
-
-    for i, cell in enumerate(self.cells):
-      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
-
-    #out = self.global_pooling(s1)
-    out = s1.view(s1.size(0),1,-1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
-    out = torch.sum(
-        out * rhs, 1, keepdim=True
-    )
+    out = self.lhs_rel_forward(lhs, rel)
+    out = torch.sum(out * rhs, 1, keepdim=True)
     return out
 
   def forward(self, x):
+    #return both output and embeddings for N3 regularisation if used
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
     to_score = self.embeddings[0].weight
 
-    # if self._interleaved:
-    #   lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    #   rel = rel.view([rel.size(0),1,self.emb_height,20])
-    #   s0 = torch.cat([lhs,rel],3)
-    #   s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    # else:
-    #   lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    #   rel = rel.view([rel.size(0),1,self.emb_height,20])
-    #   s0 = torch.cat([lhs,rel], 2)
-    # s0 = self.input_bn(s0)
-    # s0 = self.input_drop(s0)
-    # s0 = s0.expand(-1,self._C, -1, -1)
-    # s1 = s0
-
-    s0, s1 = self.preprocess(lhs,rel)
-
-    for i, cell in enumerate(self.cells):
-        s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
-    
-    out = s1.view(s1.size(0),1,-1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
+    out = self.lhs_rel_forward(lhs,rel)
     out = out @ to_score.transpose(0,1)
     return (out), (lhs,rel,rhs)
 
@@ -284,31 +244,8 @@ class NetworkKBC(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    # if self._interleaved:
-    #   lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    #   rel = rel.view([rel.size(0),1,self.emb_height,20])
-    #   s0 = torch.cat([lhs,rel],3)
-    #   s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    # else:
-    #   lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    #   rel = rel.view([rel.size(0),1,self.emb_height,20])
-    #   s0 = torch.cat([lhs,rel], 2)
-    # s0 = self.input_bn(s0)
-    # s0 = self.input_drop(s0)
-    # s0 = s0.expand(-1,self._C, -1, -1)
-    # s1 = s0
 
-    s0, s1 = self.preprocess(lhs,rel)
-
-    for i, cell in enumerate(self.cells):
-      #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
-      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
-    out = s1.view(s1.size(0),1,-1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
+    out = self.lhs_rel_forward(lhs,rel)
 
     return out
 

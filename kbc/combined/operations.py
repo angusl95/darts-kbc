@@ -21,7 +21,8 @@ OPS = {
     nn.ReLU(inplace=False),
     nn.Dropout2d(p=0.2)
     ),
-  'linear' : lambda C, stride, affine: nn.Linear(C, C),
+  'relu' : lambda C, stride, emb_dim, affine, dropout=0: ReLUOp(C, emb_dim, dropout),
+  'tanh' : lambda C, stride, emb_dim, affine, dropout=0: tanhOp(C, emb_dim, dropout)
   'identity' : lambda C, stride, affine: Identity()
 }
 
@@ -111,14 +112,52 @@ class Zero(nn.Module):
       return x.mul(0.)
     return x[:,:,::self.stride,::self.stride].mul(0.)
 
-class Linear(nn.Module):
+# class Linear(nn.Module):
 
-  def __init__(self):
-    super(Linear, self).__init__()
+#   def __init__(self):
+#     super(Linear, self).__init__()
+
+#   def forward(self, x):
+#     self.shape = x.shape
+#     x = x.flatten()
+
+class ReLUOp(nn.Module):
+
+  def __init__(self, C, emb_dim, dropout=0):
+    super(LinearOp, self).__init__()
+    self.C = C
+    self.op = nn.Sequential(
+      nn.Linear(emb_dim,emb_dim),
+      nn.ReLU(inplace=False)
+      )
+    #self.bn = nn.BatchNorm2d(C, affine=affine)
 
   def forward(self, x):
-    self.shape = x.shape
-    x = x.flatten()
+    #x = x.contiguous().view([x.size(0),1,-1])
+    x = self.op(x)
+    #x = x.view([x.size(0),self.C,32,-1])
+    #x = self.bn(x)
+
+    return x
+
+class tanhOp(nn.Module):
+
+  def __init__(self, C, emb_dim, dropout=0):
+    super(LinearOp, self).__init__()
+    self.C = C
+    self.op = nn.Sequential(
+      nn.Linear(emb_dim,emb_dim),
+      nn.tanh(inplace=False)
+      )
+    #self.bn = nn.BatchNorm2d(C, affine=affine)
+
+  def forward(self, x):
+    #x = x.contiguous().view([x.size(0),1,-1])
+    x = self.op(x)
+    #x = x.view([x.size(0),self.C,32,-1])
+    #x = self.bn(x)
+
+    return x
 
 
 class FactorizedReduce(nn.Module):
