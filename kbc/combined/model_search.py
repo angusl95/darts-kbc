@@ -225,7 +225,7 @@ class Network(KBCModel):
     lhs = self.embeddings[0](x[:, 0])
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
-    out = lhs_rel_forward(lhs, rel)
+    out = self.lhs_rel_forward(lhs, rel)
     out = torch.sum(out * rhs, 1, keepdim=True)
     return out
 
@@ -235,7 +235,7 @@ class Network(KBCModel):
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
     to_score = self.embeddings[0].weight
-    out = lhs_rel_forward(lhs,rel)
+    out = self.lhs_rel_forward(lhs,rel)
     out = out @ to_score.transpose(0,1)
 
     return out, (lhs,rel,rhs)
@@ -248,7 +248,7 @@ class Network(KBCModel):
   def get_queries(self, queries: torch.Tensor):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
-    out = lhs_rel_forward(lhs, rel)
+    out = self.lhs_rel_forward(lhs, rel)
 
     return out
 
