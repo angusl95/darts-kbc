@@ -124,7 +124,7 @@ class Zero(nn.Module):
 class ReLUOp(nn.Module):
 
   def __init__(self, C, emb_dim, dropout=0):
-    super(LinearOp, self).__init__()
+    super(ReLUOp, self).__init__()
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
@@ -144,7 +144,7 @@ class ReLUOp(nn.Module):
 class tanhOp(nn.Module):
 
   def __init__(self, C, emb_dim, dropout=0):
-    super(LinearOp, self).__init__()
+    super(tanhOp, self).__init__()
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
