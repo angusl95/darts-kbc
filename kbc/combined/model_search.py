@@ -114,7 +114,8 @@ class Cell(nn.Module):
       offset += len(states)
       states.append(s)
 
-    return torch.cat(states[-self._multiplier:], dim=1)
+    #return torch.cat(states[-self._multiplier:], dim=1)
+    return torch.cat(states[-self._steps:], dim=1)
 
 
 class Network(KBCModel):
