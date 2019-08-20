@@ -23,6 +23,7 @@ OPS = {
     ),
   'relu' : lambda C, stride, emb_dim, affine, dropout=0.3: ReLUOp(C, emb_dim, dropout),
   'tanh' : lambda C, stride, emb_dim, affine, dropout=0.3: tanhOp(C, emb_dim, dropout),
+  'sigmoid',: lambda C, stride, emb_dim, affine, dropout=0.3: sigmoidOp(C, emb_dim, dropout),
   'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
@@ -150,6 +151,26 @@ class tanhOp(nn.Module):
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.Tanh(),
+      nn.Dropout(p=dropout),
+      nn.BatchNorm1d(emb_dim, affine=affine)
+      )
+
+  def forward(self, x):
+    #x = x.contiguous().view([x.size(0),1,-1])
+    x = self.op(x)
+    #x = x.view([x.size(0),self.C,32,-1])
+    #x = self.bn(x)
+
+    return x
+
+class sigmoidOp(nn.Module):
+
+  def __init__(self, C, emb_dim, affine=True, dropout=0):
+    super(tanhOp, self).__init__()
+    self.C = C
+    self.op = nn.Sequential(
+      nn.Linear(emb_dim,emb_dim),
+      nn.Sigmoid(),
       nn.Dropout(p=dropout),
       nn.BatchNorm1d(emb_dim, affine=affine)
       )

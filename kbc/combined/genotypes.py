@@ -30,7 +30,8 @@ PRIMITIVES = [
     'none',
     'identity',
     'relu',
-    'tanh']
+    'tanh',
+    'sigmoid']
 
 NASNet = Genotype(
   normal = [
@@ -160,6 +161,5 @@ ConvE = Genotype(
     )
 
 DARTSNet_V1 = Genotype(normal=[('tanh', 1), ('none', 0), ('relu', 1), ('relu', 2), ('tanh', 2), ('tanh', 1), ('relu', 1), ('relu', 2)], normal_concat=range(2, 6), reduce=[('relu', 0), ('none', 1), ('identity', 0), ('tanh', 2), ('identity', 1), ('relu', 3), ('relu', 1), ('relu', 3)], reduce_concat=range(2, 6))
-
-
+DARTSNet_V2 = Genotype(normal=[('relu', 1), ('relu', 0), ('relu', 1), ('identity', 2), ('relu', 3), ('relu', 1), ('tanh', 2), ('relu', 1), ('relu', 1), ('tanh', 2)], normal_concat=range(3, 7), reduce=[('relu', 1), ('identity', 0), ('tanh', 1), ('identity', 0), ('identity', 0), ('identity', 2), ('tanh', 2), ('identity', 3), ('tanh', 1), ('relu', 4)], reduce_concat=range(3, 7))
 
