@@ -183,7 +183,7 @@ class NetworkKBC(KBCModel):
     self.input_drop = torch.nn.Dropout(p=0.2)
     self.input_bn = torch.nn.BatchNorm2d(1)
     #self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(2*self.emb_dim*C_prev, self.emb_dim)#, bias=False)
+    self.projection = nn.Linear(self.emb_dim*C_prev, self.emb_dim)#, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
     self.output_bn = nn.BatchNorm1d(self.emb_dim)
     self.output_drop = torch.nn.Dropout(p=0.3)
@@ -202,7 +202,8 @@ class NetworkKBC(KBCModel):
     s0 = self.input_drop(s0)
     s0 = s0.expand(-1,self._C, -1, -1)
     s1 = s0
-    return s0, s1
+    #return s0, s1
+    return lhs, rel
 
   def score(self, x):
     lhs = self.embeddings[0](x[:, 0])
