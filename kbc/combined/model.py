@@ -188,7 +188,7 @@ class NetworkKBC(KBCModel):
     self.output_bn = nn.BatchNorm1d(self.emb_dim)
     self.output_drop = torch.nn.Dropout(p=0.3)
 
-  def preprocess(lhs, rel):
+  def preprocess(self, lhs, rel):
     if self._interleaved:
       lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
       rel = rel.view([rel.size(0),1,self.emb_height,20])
