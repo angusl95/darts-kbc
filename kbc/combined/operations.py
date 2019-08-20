@@ -148,7 +148,7 @@ class tanhOp(nn.Module):
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
-      nn.tanh(inplace=False),
+      nn.Tanh(inplace=False),
       nn.Dropout(p=dropout)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
