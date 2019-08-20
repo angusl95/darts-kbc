@@ -23,7 +23,7 @@ OPS = {
     ),
   'relu' : lambda C, stride, emb_dim, affine, dropout=0.3: ReLUOp(C, emb_dim, dropout),
   'tanh' : lambda C, stride, emb_dim, affine, dropout=0.3: tanhOp(C, emb_dim, dropout),
-  'sigmoid',: lambda C, stride, emb_dim, affine, dropout=0.3: sigmoidOp(C, emb_dim, dropout),
+  'sigmoid': lambda C, stride, emb_dim, affine, dropout=0.3: sigmoidOp(C, emb_dim, dropout),
   'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
