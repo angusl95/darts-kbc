@@ -21,8 +21,8 @@ OPS = {
     nn.ReLU(inplace=False),
     nn.Dropout2d(p=0.2)
     ),
-  'relu' : lambda C, stride, emb_dim, affine, dropout=0: ReLUOp(C, emb_dim, dropout),
-  'tanh' : lambda C, stride, emb_dim, affine, dropout=0: tanhOp(C, emb_dim, dropout),
+  'relu' : lambda C, stride, emb_dim, affine, dropout=0.3: ReLUOp(C, emb_dim, dropout),
+  'tanh' : lambda C, stride, emb_dim, affine, dropout=0.3: tanhOp(C, emb_dim, dropout),
   'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
@@ -129,7 +129,7 @@ class ReLUOp(nn.Module):
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.ReLU(inplace=False),
-      nn.Dropout(p=0.3)
+      nn.Dropout(p=dropout)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
 
@@ -149,7 +149,7 @@ class tanhOp(nn.Module):
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.tanh(inplace=False),
-      nn.Dropout(p=0.3)
+      nn.Dropout(p=dropout)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
 
