@@ -229,7 +229,6 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
 
-    out = torch.cat([states[i] for i in self._concat], dim=1)
     #out = self.global_pooling(s1)
     out = s1.view(s1.size(0),1,-1)
     out = self.projection(out)
@@ -265,9 +264,9 @@ class NetworkKBC(KBCModel):
     s0, s1 = self.preprocess(lhs,rel)
 
     for i, cell in enumerate(self.cells):
-     s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
-
-    out = out.view(s1.size(0),1, -1)
+        s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
+    
+    out = s1.view(s1.size(0),1,-1)
     out = self.projection(out)
     out = out.squeeze()
     out = self.output_drop(out)
@@ -303,8 +302,7 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
-
-    out = s1.view(s1.size(0),1, -1)
+    out = s1.view(s1.size(0),1,-1)
     out = self.projection(out)
     out = out.squeeze()
     out = self.output_drop(out)
