@@ -2,19 +2,19 @@ import torch
 import torch.nn as nn
 
 OPS = {
-  'none' : lambda C, stride, affine: Zero(stride),
-  'avg_pool_3x3' : lambda C, stride, affine: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
-  'max_pool_3x3' : lambda C, stride, affine: nn.MaxPool2d(3, stride=stride, padding=1),
-  'skip_connect' : lambda C, stride, affine: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
-  'sep_conv_3x3' : lambda C, stride, affine: SepConv(C, C, 3, stride, 1, affine=affine),
-  'sep_conv_5x5' : lambda C, stride, affine: SepConv(C, C, 5, stride, 2, affine=affine),
-  'sep_conv_7x7' : lambda C, stride, affine: SepConv(C, C, 7, stride, 3, affine=affine),
-  'dil_conv_3x3' : lambda C, stride, affine: DilConv(C, C, 3, stride, 2, 2, affine=affine),
-  'dil_conv_5x5' : lambda C, stride, affine: DilConv(C, C, 5, stride, 4, 2, affine=affine),
-  'conv_3x3'     : lambda C, stride, affine: Conv(C, C, 3, stride, 1, affine=affine),
-  'conv_5x5'     : lambda C, stride, affine: Conv(C, C, 5, stride, 2, affine=affine),
-  'conv_7x7'     : lambda C, stride, affine: Conv(C, C, 7, stride, 3, affine=affine),
-  'conv_7x1_1x7' : lambda C, stride, affine: nn.Sequential(
+  'none' : lambda C, stride, emb_dim, affine, dropout=0: Zero(stride),
+  'avg_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
+  'max_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: nn.MaxPool2d(3, stride=stride, padding=1),
+  'skip_connect' : lambda C, stride, emb_dim, affine, dropout=0: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
+  'sep_conv_3x3' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, C, 3, stride, 1, affine=affine),
+  'sep_conv_5x5' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, C, 5, stride, 2, affine=affine),
+  'sep_conv_7x7' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, C, 7, stride, 3, affine=affine),
+  'dil_conv_3x3' : lambda C, stride, emb_dim, affine, dropout=0: DilConv(C, C, 3, stride, 2, 2, affine=affine),
+  'dil_conv_5x5' : lambda C, stride, emb_dim, affine, dropout=0: DilConv(C, C, 5, stride, 4, 2, affine=affine),
+  'conv_3x3'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, 3, stride, 1, affine=affine),
+  'conv_5x5'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, 5, stride, 2, affine=affine),
+  'conv_7x7'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, 7, stride, 3, affine=affine),
+  'conv_7x1_1x7' : lambda C, stride, emb_dim, affine, dropout=0: nn.Sequential(
     nn.Conv2d(C, C, (1,7), stride=(1, stride), padding=(0, 3), bias=False),
     nn.Conv2d(C, C, (7,1), stride=(stride, 1), padding=(3, 0), bias=False),
     nn.BatchNorm2d(C, affine=affine),
@@ -23,7 +23,7 @@ OPS = {
     ),
   'relu' : lambda C, stride, emb_dim, affine, dropout=0: ReLUOp(C, emb_dim, dropout),
   'tanh' : lambda C, stride, emb_dim, affine, dropout=0: tanhOp(C, emb_dim, dropout),
-  'identity' : lambda C, stride, affine: Identity()
+  'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
 class ReLUConvBN(nn.Module):
@@ -128,7 +128,8 @@ class ReLUOp(nn.Module):
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
-      nn.ReLU(inplace=False)
+      nn.ReLU(inplace=False),
+      nn.Dropout(p=0.3)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
 
@@ -147,7 +148,8 @@ class tanhOp(nn.Module):
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
-      nn.tanh(inplace=False)
+      nn.tanh(inplace=False),
+      nn.Dropout(p=0.3)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
 
