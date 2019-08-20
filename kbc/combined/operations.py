@@ -22,7 +22,7 @@ OPS = {
     nn.Dropout2d(p=0.2)
     ),
   'relu' : lambda C, stride, emb_dim, affine, dropout=0: ReLUOp(C, emb_dim, dropout),
-  'tanh' : lambda C, stride, emb_dim, affine, dropout=0: tanhOp(C, emb_dim, dropout)
+  'tanh' : lambda C, stride, emb_dim, affine, dropout=0: tanhOp(C, emb_dim, dropout),
   'identity' : lambda C, stride, affine: Identity()
 }
 
