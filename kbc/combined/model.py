@@ -81,7 +81,7 @@ class Cell(nn.Module):
     # else:
     #   self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0)
     # self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0)
-    
+    self._emb_dim = emb_dim
     if reduction:
       op_names, indices = zip(*genotype.reduce)
       concat = genotype.reduce_concat
@@ -89,7 +89,7 @@ class Cell(nn.Module):
       op_names, indices = zip(*genotype.normal)
       concat = genotype.normal_concat
     self._compile(C, op_names, indices, concat, reduction)
-    self._emb_dim = emb_dim
+    
 
   def _compile(self, C, op_names, indices, concat, reduction):
     assert len(op_names) == len(indices)
