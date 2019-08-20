@@ -76,16 +76,18 @@ class MixedOp(nn.Module):
   def __init__(self, C, stride, emb_dim):
     super(MixedOp, self).__init__()
     self._ops = nn.ModuleList()
+    self.bn = nn.BatchNorm1d(emb_dim, affine=False)
     for primitive in PRIMITIVES:
       op = OPS[primitive](C, stride, emb_dim, False)
       #TODO reintroduce this?
-      if 'pool' in primitive:
-       op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
+      # if 'pool' in primitive:
+      #  op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
       self._ops.append(op)
 
   def forward(self, x, weights):
-    return sum(w * op(x) for w, op in zip(weights, self._ops))
-
+    out = sum(w * op(x) for w, op in zip(weights, self._ops))
+    out = self.bn(out)
+    return out
 
 class Cell(nn.Module):
 

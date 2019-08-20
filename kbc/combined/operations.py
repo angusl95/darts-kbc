@@ -130,8 +130,8 @@ class ReLUOp(nn.Module):
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.ReLU(inplace=False),
-      nn.Dropout(p=dropout),
-      nn.BatchNorm1d(emb_dim, affine=affine)
+      nn.Dropout(p=dropout)
+      #nn.BatchNorm1d(emb_dim, affine=affine)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
 
@@ -151,8 +151,8 @@ class tanhOp(nn.Module):
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.Tanh(),
-      nn.Dropout(p=dropout),
-      nn.BatchNorm1d(emb_dim, affine=affine)
+      nn.Dropout(p=dropout)
+      #nn.BatchNorm1d(emb_dim, affine=affine)
       )
 
   def forward(self, x):
@@ -171,8 +171,8 @@ class sigmoidOp(nn.Module):
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.Sigmoid(),
-      nn.Dropout(p=dropout),
-      nn.BatchNorm1d(emb_dim, affine=affine)
+      nn.Dropout(p=dropout)
+      #nn.BatchNorm1d(emb_dim, affine=affine)
       )
 
   def forward(self, x):
