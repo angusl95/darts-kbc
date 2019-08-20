@@ -158,7 +158,7 @@ class tanhOp(nn.Module):
     #x = x.contiguous().view([x.size(0),1,-1])
     x = self.op(x)
     #x = x.view([x.size(0),self.C,32,-1])
-    x = self.bn(x)
+    #x = self.bn(x)
 
     return x
 
