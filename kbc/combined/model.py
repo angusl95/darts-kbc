@@ -232,7 +232,6 @@ class NetworkKBC(KBCModel):
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
     to_score = self.embeddings[0].weight
-
     out = self.lhs_rel_forward(lhs,rel)
     out = out @ to_score.transpose(0,1)
     return (out), (lhs,rel,rhs)

@@ -73,11 +73,11 @@ class KBCModel(nn.Module, ABC):
 
 class MixedOp(nn.Module):
 
-  def __init__(self, C, stride):
+  def __init__(self, C, stride, emb_dim):
     super(MixedOp, self).__init__()
     self._ops = nn.ModuleList()
     for primitive in PRIMITIVES:
-      op = OPS[primitive](C, stride, False)
+      op = OPS[primitive](C, stride, emb_dim, False)
       #TODO reintroduce this?
       if 'pool' in primitive:
        op = nn.Sequential(op, nn.BatchNorm2d(C, affine=False))
@@ -89,17 +89,18 @@ class MixedOp(nn.Module):
 
 class Cell(nn.Module):
 
-  def __init__(self, steps, multiplier, C_prev_prev, C_prev, C, reduction, reduction_prev):
+  def __init__(self, steps, multiplier, emb_dim, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
     self.reduction = reduction
     self._steps = steps
     self._multiplier = multiplier
+    self._emb_dim = emb_dim
     self._ops = nn.ModuleList()
     #self._bns = nn.ModuleList()
     for i in range(self._steps):
       for j in range(2+i):
         stride = 2 if reduction and j < 2 else 1
-        op = MixedOp(C, stride)
+        op = MixedOp(C, stride, self._emb_dim)
         self._ops.append(op)
 
   def forward(self, s0, s1, weights):
@@ -166,13 +167,13 @@ class Network(KBCModel):
           reduction = False
       else:
         reduction = False
-      cell = Cell(steps, multiplier, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
+      cell = Cell(steps, multiplier, self.emb_dim, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
       reduction_prev = reduction
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
-    self.input_drop = torch.nn.Dropout(p=0.2)
-    self.input_bn = torch.nn.BatchNorm2d(1, affine=False)
+    #self.input_drop = torch.nn.Dropout(p=0.2)
+    #self.input_bn = torch.nn.BatchNorm2d(1, affine=False)
     #self.global_pooling = nn.AdaptiveAvgPool2d(1)
     self.projection = nn.Linear(self.emb_dim*self._steps, self.emb_dim)#, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
@@ -225,9 +226,7 @@ class Network(KBCModel):
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
     out = lhs_rel_forward(lhs, rel)
-    out = torch.sum(
-        out * rhs, 1, keepdim=True
-    )
+    out = torch.sum(out * rhs, 1, keepdim=True)
     return out
 
   def forward(self, x):
@@ -236,7 +235,6 @@ class Network(KBCModel):
     rel = self.embeddings[1](x[:, 1])
     rhs = self.embeddings[0](x[:, 2])
     to_score = self.embeddings[0].weight
-
     out = lhs_rel_forward(lhs,rel)
     out = out @ to_score.transpose(0,1)
 

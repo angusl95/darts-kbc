@@ -123,13 +123,14 @@ class Zero(nn.Module):
 
 class ReLUOp(nn.Module):
 
-  def __init__(self, C, emb_dim, dropout=0):
+  def __init__(self, C, emb_dim, affine=True, dropout=0):
     super(ReLUOp, self).__init__()
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.ReLU(inplace=False),
-      nn.Dropout(p=dropout)
+      nn.Dropout(p=dropout),
+      nn.BatchNorm1d(emb_dim, affine=affine)
       )
     #self.bn = nn.BatchNorm2d(C, affine=affine)
 
@@ -143,21 +144,21 @@ class ReLUOp(nn.Module):
 
 class tanhOp(nn.Module):
 
-  def __init__(self, C, emb_dim, dropout=0):
+  def __init__(self, C, emb_dim, affine=True, dropout=0):
     super(tanhOp, self).__init__()
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
       nn.Tanh(),
-      nn.Dropout(p=dropout)
+      nn.Dropout(p=dropout),
+      nn.BatchNorm1d(emb_dim, affine=affine)
       )
-    #self.bn = nn.BatchNorm2d(C, affine=affine)
 
   def forward(self, x):
     #x = x.contiguous().view([x.size(0),1,-1])
     x = self.op(x)
     #x = x.view([x.size(0),self.C,32,-1])
-    #x = self.bn(x)
+    x = self.bn(x)
 
     return x
 
