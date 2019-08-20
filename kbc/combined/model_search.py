@@ -192,13 +192,13 @@ class Network(KBCModel):
     return model_new
 
   def lhs_rel_forward(self, lhs, rel):
-    lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-    rel = rel.view([rel.size(0),1,self.emb_height,20])
-    if self._interleaved:
-      s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
-    else:
-      s0 = torch.cat([lhs,rel], 2)
+    #lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
+    #rel = rel.view([rel.size(0),1,self.emb_height,20])
+    #if self._interleaved:
+    #  s0 = torch.cat([lhs,rel],3)
+    #  s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+    #else:
+    #  s0 = torch.cat([lhs,rel], 2)
     # s0 = self.input_bn(s0)
     # s0 = self.input_drop(s0)
     # s0 = s0.expand(-1,self._C, -1, -1)
