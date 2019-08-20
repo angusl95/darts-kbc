@@ -92,17 +92,10 @@ class Cell(nn.Module):
   def __init__(self, steps, multiplier, C_prev_prev, C_prev, C, reduction, reduction_prev):
     super(Cell, self).__init__()
     self.reduction = reduction
-
-    # if reduction_prev:
-    #   self.preprocess0 = FactorizedReduce(C_prev_prev, C, affine=False)
-    # else:
-    #   self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0, affine=False)
-    # self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0, affine=False)
     self._steps = steps
     self._multiplier = multiplier
-
     self._ops = nn.ModuleList()
-    self._bns = nn.ModuleList()
+    #self._bns = nn.ModuleList()
     for i in range(self._steps):
       for j in range(2+i):
         stride = 2 if reduction and j < 2 else 1

@@ -224,7 +224,7 @@ class NetworkKBC(KBCModel):
     # s0 = s0.expand(-1,self._C, -1, -1)
     # s1 = s0
 
-    s0, s1 = preprocess(lhs, rel)
+    s0, s1 = self.preprocess(lhs, rel)
 
     for i, cell in enumerate(self.cells):
       s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
@@ -262,7 +262,7 @@ class NetworkKBC(KBCModel):
     # s0 = s0.expand(-1,self._C, -1, -1)
     # s1 = s0
 
-    s0, s1 = preprocess(lhs,rhs)
+    s0, s1 = self.preprocess(lhs,rel)
 
     for i, cell in enumerate(self.cells):
      s0, s1 = s1, cell(s0, s1, self.drop_path_prob)
@@ -298,7 +298,7 @@ class NetworkKBC(KBCModel):
     # s0 = s0.expand(-1,self._C, -1, -1)
     # s1 = s0
 
-    s0, s1 = preprocess(lhs,rhs)
+    s0, s1 = self.preprocess(lhs,rel)
 
     for i, cell in enumerate(self.cells):
       #print('cell', i, 'shapes of s0 and s1:', s0.shape, s1.shape)
