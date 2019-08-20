@@ -166,7 +166,7 @@ class tanhOp(nn.Module):
 class sigmoidOp(nn.Module):
 
   def __init__(self, C, emb_dim, affine=True, dropout=0):
-    super(tanhOp, self).__init__()
+    super(sigmoidOp, self).__init__()
     self.C = C
     self.op = nn.Sequential(
       nn.Linear(emb_dim,emb_dim),
