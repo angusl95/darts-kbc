@@ -76,7 +76,7 @@ class MixedOp(nn.Module):
   def __init__(self, C, stride, emb_dim):
     super(MixedOp, self).__init__()
     self._ops = nn.ModuleList()
-    self.bn = nn.BatchNorm1d(emb_dim, affine=False)
+    #self.bn = nn.BatchNorm1d(emb_dim, affine=False)
     for primitive in PRIMITIVES:
       op = OPS[primitive](C, stride, emb_dim, False)
       #TODO reintroduce this?
@@ -86,7 +86,7 @@ class MixedOp(nn.Module):
 
   def forward(self, x, weights):
     out = sum(w * op(x) for w, op in zip(weights, self._ops))
-    out = self.bn(out)
+    #out = self.bn(out)
     return out
 
 class Cell(nn.Module):
@@ -181,7 +181,7 @@ class Network(KBCModel):
     self.projection = nn.Linear(self.emb_dim*self._steps, self.emb_dim)#, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
-    self.output_bn = nn.BatchNorm1d(self.emb_dim, affine=False)
+    #self.output_bn = nn.BatchNorm1d(self.emb_dim, affine=False)
     self.output_drop = torch.nn.Dropout(p=0.3)
     self._initialize_alphas()
 
@@ -219,7 +219,7 @@ class Network(KBCModel):
     out = self.projection(out)
     out = out.squeeze()
     out = self.output_drop(out)
-    out = self.output_bn(out)
+    #out = self.output_bn(out)
     out = F.relu(out)
     #return s0, s1
     return out
@@ -295,8 +295,8 @@ class Network(KBCModel):
         for j in edges:
           k_best = None
           for k in range(len(W[j])):
-            if k != PRIMITIVES.index('none'):
-            #if True:
+            #if k != PRIMITIVES.index('none'):
+            if True:
               if k_best is None or W[j][k] > W[j][k_best]:
                 k_best = k
           gene.append((PRIMITIVES[k_best], j))
