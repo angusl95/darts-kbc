@@ -198,7 +198,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
   loss = nn.CrossEntropyLoss(reduction='mean')
   print('avg entity embedding norm', torch.norm(model.embeddings[0].weight,dim=1).mean())
-  print('avg relation embedding norm', torch.norm(model.embeddings[0].weight,dim=1).mean())
+  print('avg relation embedding norm', torch.norm(model.embeddings[1].weight,dim=1).mean())
   with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
       for step, input in enumerate(train_queue):
