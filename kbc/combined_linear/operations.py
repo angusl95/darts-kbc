@@ -14,8 +14,8 @@ OPS = {
   'conv_3x3'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, 3, stride, 1, affine=affine, dropout=dropout),
   'conv_5x5'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, 5, stride, 2, affine=affine, dropout=dropout),
   'conv_7x7'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, 7, stride, 3, affine=affine, dropout=dropout),
-  'conv_1x5'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, (1,5), (1,stride), 2, affine=affine, dropout=dropout),
-  'conv_5x1'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, (5,1), (stride,1), 2, affine=affine, dropout=dropout),
+  'conv_1x5'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, (1,5), (1,stride), (0,2), affine=affine, dropout=dropout),
+  'conv_5x1'     : lambda C, stride, emb_dim, affine, dropout=0: Conv(C, C, (5,1), (stride,1), (2,0), affine=affine, dropout=dropout),
   'conv_7x1_1x7' : lambda C, stride, emb_dim, affine, dropout=0: nn.Sequential(
     nn.Conv2d(C, C, (1,7), stride=(1, stride), padding=(0, 3), bias=False),
     nn.Conv2d(C, C, (7,1), stride=(stride, 1), padding=(3, 0), bias=False),
