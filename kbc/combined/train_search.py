@@ -59,7 +59,7 @@ parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for th
 parser.add_argument('--decay2', default=0.999, type=float,help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S%f"))
+args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -209,19 +209,19 @@ def train_epoch(train_examples,train_queue, valid_queue,
           target_var = Variable(input[:,2], requires_grad=False).cuda()#async=True)
 
           input_search = next(iter(valid_queue))
-          input_search = Variable(input_search, requires_grad=False).cuda()
-          target_search = Variable(input_search[:,2], requires_grad=False).cuda()#async=True)
+          input_search_var = Variable(input_search, requires_grad=False).cuda()
+          target_search_var = Variable(input_search[:,2], requires_grad=False).cuda()#async=True)
 
-          architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
+          architect.step(input_var, target_var, input_search_var, target_search_var, lr, optimizer, unrolled=args.unrolled)
+          optimizer.zero_grad()
 
           predictions, factors = model.forward(input_var)
-          truth = input_var[:, 2]
+          #truth = input_var[:, 2]
 
-          l_fit = loss(predictions, truth)
+          l_fit = loss(predictions, target_Var)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
 
-          optimizer.zero_grad()
           l.backward()
           nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
           optimizer.step()
