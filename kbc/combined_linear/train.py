@@ -55,7 +55,7 @@ parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for th
 parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S%f"))
+args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -188,6 +188,8 @@ def main():
         break
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
+    torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
+
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
   with open(os.path.join(args.save, 'curve.pkl'), 'wb') as f:

@@ -190,7 +190,7 @@ def main():
         patience +=1
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
-
+    
 def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
