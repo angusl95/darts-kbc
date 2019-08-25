@@ -141,6 +141,7 @@ class Network(KBCModel):
         ])
     self.embeddings[0].weight.data *= init_size
     self.embeddings[1].weight.data *= init_size
+    #self.embeddings = torch.load('embeddings_conve.pt')
 
     self.cells = nn.ModuleList()
     for i in range(layers):
