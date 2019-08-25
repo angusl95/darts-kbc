@@ -283,6 +283,8 @@ class Network(KBCModel):
     num_ops = len(PRIMITIVES)
 
     self.alphas_normal = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
+    #set middle identity strength to zero to force learning convolution
+    self.alphas_normal[2,0] = -1e-8
     #self.alphas_reduce = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
     self._arch_parameters = [self.alphas_normal]
 

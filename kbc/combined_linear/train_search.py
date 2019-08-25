@@ -191,7 +191,7 @@ def main():
 
     utils.save(model, os.path.join(args.save, 'weights.pt'))
     torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
-    
+
 def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
@@ -213,6 +213,8 @@ def train_epoch(train_examples,train_queue, valid_queue,
 
           model.eval()
           architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
+          #set middle identity strength to zero to force learning convolution
+          model._arch_parameters[0][2,0]= -1e-8
           model.train()
           predictions, factors = model.forward(input_var)
           truth = input_var[:, 2]
