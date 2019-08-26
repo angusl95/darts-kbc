@@ -157,7 +157,7 @@ def main():
 
   for epoch in range(args.epochs):
     model.epoch = epoch
-    print('model temperature param', 10.5**model.epoch)
+    print('model temperature param', 1.05**model.epoch)
     scheduler.step()
     lr = scheduler.get_lr()[0]
     logging.info('epoch %d lr %e', epoch, lr)
@@ -165,7 +165,7 @@ def main():
     genotype = model.genotype()
     logging.info('genotype = %s', genotype)
 
-    print(F.softmax(model.alphas_normal, dim=-1))
+    print(F.softmax((1.05**epoch)*model.alphas_normal, dim=-1))
 
     train_epoch(train_examples, train_queue, valid_queue, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)

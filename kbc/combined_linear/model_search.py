@@ -324,7 +324,7 @@ class Network(KBCModel):
         #n += 1
       return gene
 
-    gene_normal = _parse(F.softmax(self.alphas_normal, dim=-1).data.cpu().numpy())
+    gene_normal = _parse(F.softmax((1.05**self.epoch)*self.alphas_normal, dim=-1).data.cpu().numpy())
 
     #concat = range(2+self._steps-self._multiplier, self._steps+2)
     concat = [self._steps]
