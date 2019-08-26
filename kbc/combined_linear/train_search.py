@@ -157,6 +157,7 @@ def main():
 
   for epoch in range(args.epochs):
     model.epoch = epoch
+    print('model temperature param', 10.5**model.epoch)
     scheduler.step()
     lr = scheduler.get_lr()[0]
     logging.info('epoch %d lr %e', epoch, lr)
