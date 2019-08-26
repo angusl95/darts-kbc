@@ -59,7 +59,7 @@ parser.add_argument('--decay1', default=0.9, type=float, help="decay rate for th
 parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for second moment estimate in Adam")
 args = parser.parse_args()
 
-args.save = 'search-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S%f"))
+args.save = 'search-{}-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S%f"),args.dataset)
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
@@ -156,6 +156,7 @@ def main():
   architect = Architect(model, args)
 
   for epoch in range(args.epochs):
+    model.epoch = epoch
     scheduler.step()
     lr = scheduler.get_lr()[0]
     logging.info('epoch %d lr %e', epoch, lr)
@@ -215,7 +216,6 @@ def train_epoch(train_examples,train_queue, valid_queue,
           architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
           #set middle identity strength to zero to force learning convolution
           model._arch_parameters[0].data[2,0]= -1e8
-          model._arch_parameters[0].data *= 1.05
           model.train()
           predictions, factors = model.forward(input_var)
           truth = input_var[:, 2]

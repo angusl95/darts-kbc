@@ -157,6 +157,7 @@ class Network(KBCModel):
     self.output_bn = nn.BatchNorm1d(self.emb_dim, affine=False)
     self.output_drop = torch.nn.Dropout(p=0.3)
     self._initialize_alphas()
+    self.epoch=None
 
   def new(self):
     model_new = Network(self._C, self._num_classes, self._layers, self._criterion, 
@@ -186,7 +187,7 @@ class Network(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax((1.05**self.epoch)* self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     out = s0.view(s0.size(0),1, -1)
     out = self.projection(out)
@@ -219,7 +220,7 @@ class Network(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax((1.05**self.epoch)* self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     #out = self.global_pooling(s0)
     # logits = self.classifier(out.view(out.size(0),-1))
@@ -256,7 +257,7 @@ class Network(KBCModel):
     s0 = s0.expand(-1,self._C, -1, -1)
 
     for i, cell in enumerate(self.cells):
-      weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax((1.05**self.epoch)* self.alphas_normal, dim=-1)
       s0 = cell(s0, weights)
     #out = self.global_pooling(s0)
     out = s0.view(s0.size(0),1, -1)
