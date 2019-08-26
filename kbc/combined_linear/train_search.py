@@ -196,8 +196,8 @@ def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
   regularizer: Regularizer, batch_size: int, lr, verbose: bool = True):
   loss = nn.CrossEntropyLoss(reduction='mean')
-  print('avg entity embedding norm', torch.norm(model.embeddings[0].weight,dim=1).mean())
-  print('avg relation embedding norm', torch.norm(model.embeddings[1].weight,dim=1).mean())
+  # print('avg entity embedding norm', torch.norm(model.embeddings[0].weight,dim=1).mean())
+  # print('avg relation embedding norm', torch.norm(model.embeddings[1].weight,dim=1).mean())
   with tqdm.tqdm(total=train_examples.shape[0], unit='ex', disable=not verbose) as bar:
       bar.set_description(f'train loss')
       for step, input in enumerate(train_queue):
@@ -215,6 +215,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
           #set middle identity strength to zero to force learning convolution
           model._arch_parameters[0].data[2,0]= -1e8
+          model._arch_parameters[0].data *= 1.05
           model.train()
           predictions, factors = model.forward(input_var)
           truth = input_var[:, 2]
