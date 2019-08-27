@@ -43,7 +43,6 @@ parser.add_argument('--grad_clip', type=float, default=5, help='gradient clippin
 parser.add_argument('--unrolled', action='store_true', default=False, help='use one-step unrolled validation loss')
 parser.add_argument('--arch_learning_rate', type=float, default=3e-4, help='learning rate for arch encoding')
 parser.add_argument('--arch_weight_decay', type=float, default=1e-3, help='weight decay for arch encoding')
-parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
@@ -114,7 +113,7 @@ def main():
     }[args.regularizer]
 
   model = Network(args.channels, CLASSES, args.layers, criterion, 
-    regularizer, args.interleaved, dataset.get_shape(), args.emb_dim, args.init, args.reduction, args.steps)
+    regularizer, args.interleaved, dataset.get_shape(), args.emb_dim, args.init, args.steps)
   model = model.cuda()
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
@@ -164,8 +163,6 @@ def main():
     logging.info('genotype = %s', genotype)
 
     print(F.softmax(model.alphas_normal, dim=-1))
-    if args.reduction:
-      print(F.softmax(model.alphas_reduce, dim=-1))
 
     train_epoch(train_examples, train_queue, valid_queue, model, 
       architect, criterion, optimizer, regularizer, args.batch_size, args.learning_rate)

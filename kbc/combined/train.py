@@ -41,7 +41,6 @@ parser.add_argument('--seed', type=int, default=0, help='random seed')
 parser.add_argument('--arch', type=str, default='KBCNet', help='which architecture to use')
 parser.add_argument('--grad_clip', type=float, default=5, help='gradient clipping')
 parser.add_argument('--label_smooth', type=float, default = 0.1, help='label smoothing parameter')
-parser.add_argument('--reduction', action='store_true', help='use reduction cells in convnet')
 parser.add_argument('--steps', type=int, default=4, help='number of steps in learned cell')
 parser.add_argument('--interleaved', action='store_true', default=False, help='interleave subject and relation embeddings rather than stacking')
 datasets = ['FB15K', 'WN', 'WN18RR', 'FB237', 'YAGO3-10']
@@ -118,7 +117,7 @@ def main():
   logging.info('genotype = %s', genotype)
   model = Network(args.channels,
     CLASSES, args.layers, criterion, regularizer, genotype, args.interleaved,
-    dataset.get_shape(), args.emb_dim, args.init, args.reduction)
+    dataset.get_shape(), args.emb_dim, args.init)
   model = model.cuda()
 
   optimizer = {

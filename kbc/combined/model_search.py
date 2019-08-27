@@ -91,9 +91,8 @@ class MixedOp(nn.Module):
 
 class Cell(nn.Module):
 
-  def __init__(self, steps, multiplier, emb_dim, C_prev_prev, C_prev, C, reduction, reduction_prev):
+  def __init__(self, steps, multiplier, emb_dim, C_prev_prev, C_prev, C):
     super(Cell, self).__init__()
-    self.reduction = reduction
     self._steps = steps
     self._multiplier = multiplier
     self._emb_dim = emb_dim
@@ -101,7 +100,7 @@ class Cell(nn.Module):
     #self._bns = nn.ModuleList()
     for i in range(self._steps):
       for j in range(2+i):
-        stride = 2 if reduction and j < 2 else 1
+        stride = 1
         op = MixedOp(C, stride, self._emb_dim)
         self._ops.append(op)
 
@@ -124,7 +123,7 @@ class Network(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
     interleaved, sizes: Tuple[int, int, int], emb_dim: int, init_size: float = 1e-3,
-    reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
+    steps=4, multiplier=4, stem_multiplier=3):
     #TODO: remove stem multiplier from args?
     super(Network, self).__init__()
     self._C = C
@@ -142,7 +141,6 @@ class Network(KBCModel):
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
-    self._reduction_flag = reduction_flag
     self.embeddings = nn.ModuleList([
       #TODO restore sparse here?
             nn.Embedding(s, emb_dim)#, sparse=True)
@@ -160,18 +158,8 @@ class Network(KBCModel):
  
     C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
     self.cells = nn.ModuleList()
-    reduction_prev = False
     for i in range(layers):
-      if self._reduction_flag:
-        if i in [layers//3, 2*layers//3]:
-          C_curr *= 2
-          reduction = True
-        else:
-          reduction = False
-      else:
-        reduction = False
-      cell = Cell(steps, multiplier, self.emb_dim, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
-      reduction_prev = reduction
+      cell = Cell(steps, multiplier, self.emb_dim, C_prev_prev, C_prev, C_curr)
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, multiplier*C_curr
 
@@ -188,7 +176,7 @@ class Network(KBCModel):
   def new(self):
     model_new = Network(self._C, self._num_classes, self._layers, self._criterion, 
       self._regularizer, self._interleaved,
-      self.sizes, self.emb_dim, self._init_size, self._reduction_flag, self._steps, 
+      self.sizes, self.emb_dim, self._init_size, self._steps, 
       self._multiplier, self._stem_multiplier).cuda()
     for x, y in zip(model_new.arch_parameters(), self.arch_parameters()):
         x.data.copy_(y.data)
@@ -210,10 +198,7 @@ class Network(KBCModel):
     s0 = lhs
     s1 = rel
     for i, cell in enumerate(self.cells):
-      if cell.reduction:
-          weights = F.softmax(self.alphas_reduce, dim=-1)
-      else:
-          weights = F.softmax(self.alphas_normal, dim=-1)
+      weights = F.softmax(self.alphas_normal, dim=-1)
       s0, s1 = s1, cell(s0, s1, weights)
     out = s1.view(s1.size(0),1,-1)
     out = self.projection(out)
@@ -268,16 +253,9 @@ class Network(KBCModel):
     num_ops = len(PRIMITIVES)
 
     self.alphas_normal = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
-    self.alphas_reduce = Variable(1e-3*torch.randn(k, num_ops).cuda(), requires_grad=True)
-    if self._reduction_flag:
-      self._arch_parameters = [
-        self.alphas_normal,
-        self.alphas_reduce,
-      ]
-    else:
-      self._arch_parameters = [
-        self.alphas_normal
-      ]
+    self._arch_parameters = [
+      self.alphas_normal
+    ]
 
   def arch_parameters(self):
     return self._arch_parameters
@@ -304,12 +282,10 @@ class Network(KBCModel):
       return gene
 
     gene_normal = _parse(F.softmax(self.alphas_normal, dim=-1).data.cpu().numpy())
-    gene_reduce = _parse(F.softmax(self.alphas_reduce, dim=-1).data.cpu().numpy())
 
     concat = range(2+self._steps-self._multiplier, self._steps+2)
     genotype = Genotype(
-      normal=gene_normal, normal_concat=concat,
-      reduce=gene_reduce, reduce_concat=concat
+      normal=gene_normal, normal_concat=concat
     )
     return genotype
 

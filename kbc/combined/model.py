@@ -73,25 +73,16 @@ class KBCModel(nn.Module, ABC):
 
 class Cell(nn.Module):
 
-  def __init__(self, genotype, emb_dim, C_prev_prev, C_prev, C, reduction, reduction_prev):
+  def __init__(self, genotype, emb_dim, C_prev_prev, C_prev, C):
     super(Cell, self).__init__()
 
-    # if reduction_prev:
-    #   self.preprocess0 = FactorizedReduce(C_prev_prev, C)
-    # else:
-    #   self.preprocess0 = ReLUConvBN(C_prev_prev, C, 1, 1, 0)
-    # self.preprocess1 = ReLUConvBN(C_prev, C, 1, 1, 0)
     self._emb_dim = emb_dim
-    if reduction:
-      op_names, indices = zip(*genotype.reduce)
-      concat = genotype.reduce_concat
-    else:
-      op_names, indices = zip(*genotype.normal)
-      concat = genotype.normal_concat
-    self._compile(C, op_names, indices, concat, reduction)
+  op_names, indices = zip(*genotype.normal)
+  concat = genotype.normal_concat
+    self._compile(C, op_names, indices, concat)
     
 
-  def _compile(self, C, op_names, indices, concat, reduction):
+  def _compile(self, C, op_names, indices, concat):
     assert len(op_names) == len(indices)
     self._steps = len(op_names) // 2
     self._concat = concat
@@ -99,7 +90,7 @@ class Cell(nn.Module):
 
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
-      stride = 2 if reduction and index < 2 else 1
+      stride = 1
       op = OPS[name](C, stride, self._emb_dim, True)
       self._ops += [op]
     self._indices = indices
@@ -129,8 +120,7 @@ class NetworkKBC(KBCModel):
 
   def __init__(self, C, num_classes, layers, criterion, regularizer, 
     genotype, interleaved, sizes: Tuple[int, int, int], emb_dim: int, 
-    init_size: float = 1e-3, 
-    reduction_flag = True, steps=4, multiplier=4, stem_multiplier=3):
+    init_size: float = 1e-3, steps=4, multiplier=4, stem_multiplier=3):
     #TODO: remove stem multiplier from args?
     super(NetworkKBC, self).__init__()
     self._C = C
@@ -148,7 +138,6 @@ class NetworkKBC(KBCModel):
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
-    self._reduction_flag = reduction_flag
     self.embeddings = nn.ModuleList([
             nn.Embedding(s, emb_dim, sparse=True)
             for s in sizes[:2]
@@ -164,18 +153,8 @@ class NetworkKBC(KBCModel):
 
     C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
     self.cells = nn.ModuleList()
-    reduction_prev = False
     for i in range(layers):
-      if self._reduction_flag:
-        if i in [layers//3, 2*layers//3]:
-          C_curr *= 2
-          reduction = True
-        else:
-          reduction = False
-      else:
-        reduction = False
-      cell = Cell(genotype, self.emb_dim, C_prev_prev, C_prev, C_curr, reduction, reduction_prev)
-      reduction_prev = reduction
+      cell = Cell(genotype, self.emb_dim, C_prev_prev, C_prev, C_curr)
       self.cells += [cell]
       C_prev_prev, C_prev = C_prev, cell.multiplier*C_curr
       # if i == 2*layers//3:
