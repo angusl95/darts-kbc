@@ -303,8 +303,6 @@ class Network(KBCModel):
         W = weights.copy()
         k_best = None
         for k in range(len(W[i])):
-          #if k != PRIMITIVES.index('none'):
-        #     if True:
           if k_best is None or W[i][k] > W[i][k_best]:
             k_best = k
         gene.append((PRIMITIVES[k_best], i))

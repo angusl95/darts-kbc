@@ -218,7 +218,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           predictions, factors = model.forward(input_var)
           #truth = input_var[:, 2]
 
-          l_fit = loss(predictions, target_Var)
+          l_fit = loss(predictions, target_var)
           l_reg = regularizer.forward(factors)
           l = l_fit + l_reg
 
