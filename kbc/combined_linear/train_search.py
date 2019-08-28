@@ -191,8 +191,8 @@ def main():
       else:
         patience +=1
 
-    utils.save(model, os.path.join(args.save, 'weights.pt'))
-    torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
+    #utils.save(model, os.path.join(args.save, 'weights.pt'))
+    #torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
 
 def train_epoch(train_examples,train_queue, valid_queue,
   model, architect, criterion, optimizer: optim.Optimizer, 
