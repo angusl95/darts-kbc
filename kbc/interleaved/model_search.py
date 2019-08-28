@@ -98,7 +98,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for i in range(self._steps):
       for j in range(1):
-        stride = 1
+        stride = 2
         op = MixedOp(C, stride, emb_dim, self._dropout)
         self._ops.append(op)
 
