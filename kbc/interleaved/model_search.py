@@ -127,9 +127,9 @@ class Network(KBCModel):
     self._regularizer = regularizer
     self._steps = steps
     self.emb_dim = emb_dim
-    if self.emb_dim % 20 != 0:
-      raise ValueError('embedding size must be divisble by 20')
-    self.emb_height = self.emb_dim//20
+    if self.emb_dim % 32 != 0:
+      raise ValueError('embedding size must be divisble by 32')
+    self.emb_height = self.emb_dim//32
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
@@ -173,13 +173,13 @@ class Network(KBCModel):
     to_score = self.embeddings[0].weight
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,32])
     else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
@@ -206,13 +206,13 @@ class Network(KBCModel):
     to_score = self.embeddings[0].weight
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,32])
     else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
@@ -243,13 +243,13 @@ class Network(KBCModel):
     rel = self.embeddings[1](queries[:, 1])
 
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,32])
     else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
