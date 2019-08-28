@@ -3,8 +3,8 @@ import torch.nn as nn
 
 OPS = {
   'none' : lambda C, stride, emb_dim, affine, dropout=0: Zero(stride),
-  'avg_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
-  'max_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: nn.MaxPool2d(3, stride=stride, padding=1),
+  'avg_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: torch.repeat_interleave(nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),4,dim=1),
+  'max_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: torch.repeat_interleave(nn.MaxPool2d(3, stride=stride, padding=1),4,dim=1),
   'identity' : lambda C, stride, emb_dim ,affine, dropout=0: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
   'sep_conv_3x3' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, 4*C, 3, stride, 1, affine=affine, dropout=dropout),
   'sep_conv_5x5' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, 4*C, 5, stride, 2, affine=affine, dropout=dropout),
