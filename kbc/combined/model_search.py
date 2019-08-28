@@ -116,7 +116,8 @@ class Cell(nn.Module):
       states.append(s)
 
     #return torch.cat(states[-self._multiplier:], dim=1)
-    return torch.cat(states[-self._steps:], dim=1)
+    #return torch.cat(states[-self._steps:], dim=1)
+    return torch.sum(states[-self._steps:], dim=1)
 
 
 class Network(KBCModel):
@@ -135,9 +136,6 @@ class Network(KBCModel):
     self._multiplier = multiplier
     self._stem_multiplier = stem_multiplier
     self.emb_dim = emb_dim
-    if self.emb_dim % 20 != 0:
-      raise ValueError('embedding size must be divisble by 20')
-    self.emb_height = self.emb_dim//20
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
@@ -166,7 +164,7 @@ class Network(KBCModel):
     #self.input_drop = torch.nn.Dropout(p=0.2)
     #self.input_bn = torch.nn.BatchNorm2d(1, affine=False)
     #self.global_pooling = nn.AdaptiveAvgPool2d(1)
-    self.projection = nn.Linear(self.emb_dim*self._steps, self.emb_dim)#, bias=False)
+    self.projection = nn.Linear(self.emb_dim, self.emb_dim)#, bias=False)
     #self.classifier = nn.Linear(C_prev, num_classes)
 
     #self.output_bn = nn.BatchNorm1d(self.emb_dim, affine=False)
