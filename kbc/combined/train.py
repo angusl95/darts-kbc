@@ -189,7 +189,7 @@ def main():
         print('early stopping...')
         break
 
-    utils.save(model, os.path.join(args.save, 'weights.pt'))
+    #utils.save(model, os.path.join(args.save, 'weights.pt'))
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
   with open(os.path.join(args.save, 'curve.pkl'), 'wb') as f:

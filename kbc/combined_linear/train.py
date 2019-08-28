@@ -187,8 +187,8 @@ def main():
         print('no improvement for 10 evaluations, early stopping...')
         break
 
-    utils.save(model, os.path.join(args.save, 'weights.pt'))
-    torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
+    #utils.save(model, os.path.join(args.save, 'weights.pt'))
+    #torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
 
   results = dataset.eval(model, 'test', -1)
   print("\n\nTEST : ", results)
