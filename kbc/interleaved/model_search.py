@@ -97,10 +97,9 @@ class Cell(nn.Module):
     self._dropout = dropout
     self._ops = nn.ModuleList()
     for i in range(self._steps):
-      for j in range(1):
-        stride = 2
-        op = MixedOp(C, stride, emb_dim, self._dropout)
-        self._ops.append(op)
+      stride = 2
+      op = MixedOp(C*(4**i), stride, emb_dim, self._dropout)
+      self._ops.append(op)
 
   def forward(self, s0, weights):
     #states = [s0]
@@ -166,12 +165,7 @@ class Network(KBCModel):
         x.data.copy_(y.data)
     return model_new
 
-  def score(self, x):
-    lhs = self.embeddings[0](x[:, 0])
-    rel = self.embeddings[1](x[:, 1])
-    rhs = self.embeddings[0](x[:, 2])
-    to_score = self.embeddings[0].weight
-
+  def lhs_rel_forward(self,lhs,rel):
     if self._interleaved:
       lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
       rel = rel.view([rel.size(0),1,self.emb_height,32])
@@ -194,6 +188,15 @@ class Network(KBCModel):
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
+    return out
+
+
+  def score(self, x):
+    lhs = self.embeddings[0](x[:, 0])
+    rel = self.embeddings[1](x[:, 1])
+    rhs = self.embeddings[0](x[:, 2])
+    to_score = self.embeddings[0].weight
+    out = self.lhs_rel_forward(lhs,rel)
     out = torch.sum(
         out * rhs, 1, keepdim=True
     )
@@ -205,31 +208,7 @@ class Network(KBCModel):
     rhs = self.embeddings[0](x[:, 2])
     to_score = self.embeddings[0].weight
 
-    if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
-      rel = rel.view([rel.size(0),1,self.emb_height,32])
-      s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,32])
-    else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
-      rel = rel.view([rel.size(0),1,self.emb_height,32])
-      s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
-    s0 = self.input_drop(s0)
-    s0 = s0.expand(-1,self._C, -1, -1)
-
-    for i, cell in enumerate(self.cells):
-      weights = F.softmax((1.05**self.epoch)* self.alphas_normal, dim=-1)
-      s0 = cell(s0, weights)
-    #out = self.global_pooling(s0)
-    # logits = self.classifier(out.view(out.size(0),-1))
-    # return logits
-    out = s0.view(s0.size(0),1, -1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
+    out = self.lhs_rel_forward(lhs,rel)
     out = out @ to_score.transpose(0,1)
     return out, (lhs,rel,rhs)
 
@@ -242,29 +221,7 @@ class Network(KBCModel):
     lhs = self.embeddings[0](queries[:, 0])
     rel = self.embeddings[1](queries[:, 1])
 
-    if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
-      rel = rel.view([rel.size(0),1,self.emb_height,32])
-      s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,32])
-    else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
-      rel = rel.view([rel.size(0),1,self.emb_height,32])
-      s0 = torch.cat([lhs,rel], 2)
-    s0 = self.input_bn(s0)
-    s0 = self.input_drop(s0)
-    s0 = s0.expand(-1,self._C, -1, -1)
-
-    for i, cell in enumerate(self.cells):
-      weights = F.softmax((1.05**self.epoch)* self.alphas_normal, dim=-1)
-      s0 = cell(s0, weights)
-    #out = self.global_pooling(s0)
-    out = s0.view(s0.size(0),1, -1)
-    out = self.projection(out)
-    out = out.squeeze()
-    out = self.output_drop(out)
-    out = self.output_bn(out)
-    out = F.relu(out)
+    out = self.lhs_rel_forward(lhs,rel)
 
     return out
 
