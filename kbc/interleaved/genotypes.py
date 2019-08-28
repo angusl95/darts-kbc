@@ -17,7 +17,7 @@ Genotype = namedtuple('Genotype', 'normal normal_concat')# reduce reduce_concat'
 # ]
 
 PRIMITIVES = [
-    'identity',
+    #'identity',
     'max_pool_3x3',
     'avg_pool_3x3',
     'conv_3x3',
