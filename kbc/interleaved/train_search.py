@@ -216,7 +216,7 @@ def train_epoch(train_examples,train_queue, valid_queue,
           model.eval()
           architect.step(input_var, target_var, input_search, target_search, lr, optimizer, unrolled=args.unrolled)
           #set middle identity strength to zero to force learning convolution
-          model._arch_parameters[0].data[2,0]= -1e8
+          #model._arch_parameters[0].data[2,0]= -1e8
           model.train()
           predictions, factors = model.forward(input_var)
           truth = input_var[:, 2]
