@@ -89,7 +89,7 @@ class Cell(nn.Module):
 
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
-      stride = 1
+      stride = 2
       op = OPS[name](C, stride,self._emb_dim, True, self._dropout)
       self._ops += [op]
     self._indices = indices
