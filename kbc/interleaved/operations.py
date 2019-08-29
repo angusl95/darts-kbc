@@ -34,8 +34,11 @@ OPS = {
 }
 
 class Stack(torch.nn.Module):
-    def forward(self, x, repeats):
-        x = torch.repeat_interleave(x,4,dim=1)
+    def __init__(self, repeats):
+      super(Stack, self).__init__()
+      self.repeats = repeats
+    def forward(self, x):
+        x = torch.repeat_interleave(x,self.repeats,dim=1)
         return x
 
 # class StackedMaxPool(nn.Module):
