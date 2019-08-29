@@ -27,7 +27,7 @@ OPS = {
   'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
-class StackedMaxPool(self, pooling_fn):
+class StackedMaxPool(nn.Module):
 
   def __init__(self, C_in, C_out, kernel_size, stride, padding=1):
     super(StackedMaxPool, self).__init__()
@@ -40,7 +40,7 @@ class StackedMaxPool(self, pooling_fn):
     def forward(self,x):
       return torch.repeat_interleave(self.op(x),self.C_out//self.C_in,dim=1)
 
-class StackedAvgPool(self, pooling_fn):
+class StackedAvgPool(nn.Module):
 
   def __init__(self, C_in, C_out, kernel_size, stride, padding=1):
     super(StackedAvgPool, self).__init__()
