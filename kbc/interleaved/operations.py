@@ -3,8 +3,14 @@ import torch.nn as nn
 
 OPS = {
   'none' : lambda C, stride, emb_dim, affine, dropout=0: Zero(stride),
-  'avg_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: StackedAvgPool(C, 4*C, 3, stride, 1),
-  'max_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: StackedMaxPool(C, 4*C, 3, stride, 1),
+  'avg_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: nn.Sequential(
+    nn.AvgPool2d(3, stride=stride, padding=1, count_include_pad=False),
+    Stack(repeats=4)
+    ),
+  'max_pool_3x3' : lambda C, stride, emb_dim, affine, dropout=0: nn.Sequential(
+    nn.MaxPool2d(3, stride=stride, padding=1),
+    Stack(repeats=4)
+    ),
   'identity' : lambda C, stride, emb_dim ,affine, dropout=0: Identity() if stride == 1 else FactorizedReduce(C, C, affine=affine),
   'sep_conv_3x3' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, 4*C, 3, stride, 1, affine=affine, dropout=dropout),
   'sep_conv_5x5' : lambda C, stride, emb_dim, affine, dropout=0: SepConv(C, 4*C, 5, stride, 2, affine=affine, dropout=dropout),
@@ -27,31 +33,36 @@ OPS = {
   'identity' : lambda C, stride, emb_dim, affine, dropout=0: Identity()
 }
 
-class StackedMaxPool(nn.Module):
+class Stack(torch.nn.Module):
+    def forward(self, x, repeats):
+        x = torch.repeat_interleave(x,4,dim=1)
+        return x
 
-  def __init__(self, C_in, C_out, kernel_size, stride, padding=1):
-    super(StackedMaxPool, self).__init__()
-    self.op = nn.Sequential(
-      nn.MaxPool2d(kernel_size, stride=stride, padding=padding)
-      )
-    self.C_in = C_in
-    self.C_out = C_out
+# class StackedMaxPool(nn.Module):
 
-    def forward(self,x):
-      return torch.repeat_interleave(self.op(x),self.C_out//self.C_in,dim=1)
+#   def __init__(self, C_in, C_out, kernel_size, stride, padding=1):
+#     super(StackedMaxPool, self).__init__()
+#     self.op = nn.Sequential(
+#       nn.MaxPool2d(kernel_size, stride=stride, padding=padding)
+#       )
+#     self.C_in = C_in
+#     self.C_out = C_out
 
-class StackedAvgPool(nn.Module):
+#     def forward(self,x):
+#       return torch.repeat_interleave(self.op(x),self.C_out//self.C_in,dim=1)
 
-  def __init__(self, C_in, C_out, kernel_size, stride, padding=1):
-    super(StackedAvgPool, self).__init__()
-    self.op = nn.Sequential(
-      nn.AvgPool2d(kernel_size, stride=stride, padding=padding, count_include_pad=False)
-      )
-    self.C_in = C_in
-    self.C_out = C_out
+# class StackedAvgPool(nn.Module):
 
-    def forward(self,x):
-      return torch.repeat_interleave(self.op(x),self.C_out//self.C_in,dim=1)
+#   def __init__(self, C_in, C_out, kernel_size, stride, padding=1):
+#     super(StackedAvgPool, self).__init__()
+#     self.op = nn.Sequential(
+#       nn.AvgPool2d(kernel_size, stride=stride, padding=padding, count_include_pad=False)
+#       )
+#     self.C_in = C_in
+#     self.C_out = C_out
+
+#     def forward(self,x):
+#       return torch.repeat_interleave(self.op(x),self.C_out//self.C_in,dim=1)
 
 class ReLUConvBN(nn.Module):
 
