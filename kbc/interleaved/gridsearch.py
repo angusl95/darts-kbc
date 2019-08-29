@@ -21,11 +21,8 @@ for dataset in ['WN18RR', 'FB237']:
 				#$ -l h_rt=6:00:00
 				#$ -S /bin/bash
 				#$ -N train
-
 				#$ -cwd
-
 				hostname
-
 				python /home/angulamb/darts-kbc/kbc/interleaved/train.py --dataset {} --learning_rate {} \
 				--learning_rate_min {} --emb_dim 1000 --channels 64 --arch ConvE --epochs 500 --batch_size 256 \
 				--reg 0 --report_freq 3 --optimizer Adam --layers 1 --weight_decay {} --seed 123 \
