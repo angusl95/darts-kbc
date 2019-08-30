@@ -120,10 +120,10 @@ def main():
 
 
   #model = utils.load(model, 'search-EXP-20190823-173036%f/weights.pt')
-  #embeddings = model.embeddings
-  #torch.save(embeddings, 'search-EXP-20190823-173036%f/embeddings.pt')
   weights = torch.load('search-EXP-20190823-173036%f/weights.pt')
-  print(weights)
+  #print(weights)
+  embeddings = [weights['embeddings.0.weight'], weights['embeddings.1.weight']]
+  torch.save(embeddings, 'search-EXP-20190823-173036%f/embeddings.pt')
 
 def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     """
