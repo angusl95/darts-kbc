@@ -90,7 +90,7 @@ class Cell(nn.Module):
     self._ops = nn.ModuleList()
     for name, index in zip(op_names, indices):
       stride = 2
-      op = OPS[name](C, stride,self._emb_dim, True, self._dropout)
+      op = OPS[name](C*(4**index), stride,self._emb_dim, True, self._dropout)
       self._ops += [op]
     self._indices = indices
 
@@ -127,9 +127,9 @@ class NetworkKBC(KBCModel):
     self._regularizer = regularizer
     self._steps = steps
     self.emb_dim = emb_dim
-    if self.emb_dim % 20 != 0:
-      raise ValueError('embedding size must be divisble by 20')
-    self.emb_height = self.emb_dim//20
+    if self.emb_dim % 32 != 0:
+      raise ValueError('embedding size must be divisble by 32')
+    self.emb_height = self.emb_dim//32
     self.sizes = sizes
     self._init_size = init_size
     self._interleaved = interleaved
@@ -156,13 +156,13 @@ class NetworkKBC(KBCModel):
 
   def lhs_rel_foward(self, lhs, rel):
     if self._interleaved:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel],3)
-      s0 = s0.view([lhs.size(0),1,2*self.emb_height,20])
+      s0 = s0.view([lhs.size(0),1,2*self.emb_height,32])
     else:
-      lhs = lhs.view([lhs.size(0),1,self.emb_height,20])
-      rel = rel.view([rel.size(0),1,self.emb_height,20])
+      lhs = lhs.view([lhs.size(0),1,self.emb_height,32])
+      rel = rel.view([rel.size(0),1,self.emb_height,32])
       s0 = torch.cat([lhs,rel], 2)
     s0 = self.input_bn(s0)
     s0 = self.input_drop(s0)
