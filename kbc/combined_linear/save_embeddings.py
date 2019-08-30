@@ -119,10 +119,11 @@ def main():
   logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
 
 
-  model = utils.load(model, 'search-EXP-20190823-173036%f/weights.pt')
-  embeddings = model.embeddings
-  torch.save(embeddings, 'search-EXP-20190823-173036%f/embeddings.pt')
-
+  #model = utils.load(model, 'search-EXP-20190823-173036%f/weights.pt')
+  #embeddings = model.embeddings
+  #torch.save(embeddings, 'search-EXP-20190823-173036%f/embeddings.pt')
+  weights = torch.load('search-EXP-20190823-173036%f/weights.pt')
+  print(weights)
 
 def avg_both(mrrs: Dict[str, float], hits: Dict[str, torch.FloatTensor]):
     """
