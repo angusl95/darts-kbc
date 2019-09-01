@@ -52,3 +52,5 @@ rand1 = Genotype(normal=[('conv_3x3', 0), ('conv_5x5', 1), ('dil_conv_5x5', 2), 
 rand2 = Genotype(normal=[('identity', 0), ('conv_5x5', 1), ('conv_3x3', 2), ('conv_5x1', 3), ('conv_5x5', 4)], normal_concat=[5])
 rand3 = Genotype(normal=[('conv_5x5', 0), ('conv_3x3', 1), ('conv_1x5', 2), ('dil_conv_5x5', 3), ('conv_3x3', 4)], normal_concat=[5])
 rand4 = Genotype(normal=[('identity', 0), ('dil_conv_5x5', 1), ('conv_1x5', 2), ('conv_1x5', 3), ('conv_3x3', 4)], normal_concat=[5])
+
+arch_vis = WNNet_V2 = Genotype(normal=[('mixed op', 0), ('mixed op', 1), ('mixed op', 2), ('mixed op', 3), ('mixed op', 4)], normal_concat=[5])

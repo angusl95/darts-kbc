@@ -12,7 +12,7 @@ def plot(genotype, filename):
   g.body.extend(['rankdir=LR'])
 
   g.node("e_s", fillcolor='darkseagreen2')
-  g.node("e_r", fillcolor='darkseagreen2')
+  g.node("r_r", fillcolor='darkseagreen2')
   g.node("e_o", fillcolor='darkseagreen2')
   #assert len(genotype) % 2 == 0
   #steps = len(genotype) // 2
@@ -21,21 +21,24 @@ def plot(genotype, filename):
   for i in range(steps+1):
     g.node(str(i), fillcolor='lightblue')
 
-  g.edge("e_s", "0", label="interleave", fillcolor="gray")
-  g.edge("e_r", "0", label="interleave", fillcolor="gray")
+  g.edge("e_s", "0", label="concat", fillcolor="gray")
+  g.edge("r_r", "0", label="concat", fillcolor="gray")
 
   for i in range(steps):
       op, _ = genotype[i]
       g.edge(str(i), str(i+1), label=op, fillcolor="gray")
+      g.edge(str(i), str(i+1), fillcolor="gray")
+      g.edge(str(i), str(i+1), fillcolor="gray")
+      g.edge(str(i), str(i+1), fillcolor="gray")
 
-  g.node("proj", fillcolor='palegoldenrod')
+  g.node("6", fillcolor='lightblue')
   g.node("f", fillcolor='palegoldenrod')
 
-  g.edge(str(steps), "proj", label="linear", fillcolor="gray")
+  g.edge(str(steps), "6", label="linear", fillcolor="gray")
   
   #for i in range(steps):
   #  g.edge(str(i), "c_{i}", fillcolor="gray")
-  g.edge("proj", "f", label="dot product", fillcolor="gray")
+  g.edge("6", "f", label="dot product", fillcolor="gray")
   g.edge("e_o", "f", label="dot product", fillcolor="gray" )
   g.render(filename, view=True)
 
