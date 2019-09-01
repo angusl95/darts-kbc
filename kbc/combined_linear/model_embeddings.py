@@ -116,7 +116,7 @@ class Cell(nn.Module):
 
 class NetworkKBC(KBCModel):
 
-  def __init__(self, embeddings C, num_classes, layers, criterion, regularizer, 
+  def __init__(self, embeddings_path, C, num_classes, layers, criterion, regularizer, 
     genotype, interleaved, sizes: Tuple[int, int, int], emb_dim: int, 
     init_size: float = 1e-3, steps=4):
     super(NetworkKBC, self).__init__()
@@ -139,7 +139,8 @@ class NetworkKBC(KBCModel):
     #     ])
     # self.embeddings[0].weight.data *= init_size
     # self.embeddings[1].weight.data *= init_size
-    self.embeddings = torch.load(embeddings)
+    print('training from embeddings', embeddings_path)
+    self.embeddings = torch.load(embeddings_path)
     self.embeddings[0].weight.requires_grad=False
     self.embeddings[1].weight.requires_grad=False
 
