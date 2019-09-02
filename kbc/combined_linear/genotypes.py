@@ -51,7 +51,7 @@ rand4 = Genotype(normal=[('identity', 0), ('dil_conv_5x5', 1), ('conv_1x5', 2), 
 identity = Genotype(normal = [('identity', 0)], normal_concat = [1])
 conv = Genotype(normal = [('conv_3x3', 0)], normal_concat = [1])
 dil_conv = Genotype(normal = [('dil_conv_3x3', 0)], normal_concat = [1])
-max_pool = Genotype(normal = [('max_pool', 0)], normal_concat = [1])
-avg_pool = Genotype(normal = [('avg_pool', 0)], normal_concat = [1])
+max_pool = Genotype(normal = [('max_pool_3x3', 0)], normal_concat = [1])
+avg_pool = Genotype(normal = [('avg_pool_3x3', 0)], normal_concat = [1])
 
 arch_vis = WNNet_V2 = Genotype(normal=[('mixed op', 0), ('mixed op', 1), ('mixed op', 2), ('mixed op', 3), ('mixed op', 4)], normal_concat=[5])

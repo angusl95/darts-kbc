@@ -180,7 +180,7 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       s0 = cell(s0)
     out = s0
-    out = self.projection(out.view(out.size(0),-1))
+    out = self.projection(out.contiguous().view(out.size(0),-1))
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
@@ -211,7 +211,7 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       s0 = cell(s0)
     out = s0
-    out = self.projection(out.view(out.size(0),-1))
+    out = self.projection(out.contiguous().view(out.size(0),-1))
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
@@ -247,7 +247,7 @@ class NetworkKBC(KBCModel):
     for i, cell in enumerate(self.cells):
       s0 = cell(s0)
     out = s0
-    out = self.projection(out.view(out.size(0),-1))
+    out = self.projection(out.contiguous().view(out.size(0),-1))
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)

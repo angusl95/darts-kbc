@@ -56,7 +56,7 @@ parser.add_argument('--decay2', default=0.999, type=float, help="decay rate for 
 parser.add_argument('--embeddings', type=str, help='location of embeddings to use')
 args = parser.parse_args()
 
-args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
+args.save = 'eval-{}-{}-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"),args.embeddings,args.arch)
 utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
 
 log_format = '%(asctime)s %(message)s'
