@@ -12,7 +12,7 @@ for emb_op in ['identity', 'conv', 'dil_conv', 'max_pool', 'avg_pool']:
 
 hostname
 
-python /home/angulamb/darts-kbc/kbc/interleaved/train_from_embeddings.py --embeddings {} --dataset WN18RR --learning_rate 1e-4 \
+python /home/angulamb/darts-kbc/kbc/combined_linear/train_from_embeddings.py --embeddings {} --dataset WN18RR --learning_rate 1e-4 \
 --learning_rate_min 1e-4 --emb_dim 200 --channels 32 --arch {} --epochs 200 --batch_size 256 \
 --reg 0 --report_freq 3 --optimizer Adam --layers 1 --weight_decay 1e-3 --seed 123 \
 			""".format('embeddings_' + emb_op + '.pt', arch_op)
