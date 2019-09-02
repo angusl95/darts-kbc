@@ -184,9 +184,9 @@ def main():
         'optimizer' : optimizer.state_dict(),
         }, is_best, args.save)
 
-      if patience >= 10:
-        print('no improvement for 10 evaluations, early stopping...')
-        break
+      # if patience >= 10:
+      #   print('no improvement for 10 evaluations, early stopping...')
+      #   break
 
     #utils.save(model, os.path.join(args.save, 'weights.pt'))
     #torch.save(model.embeddings, os.path.join(args.save, 'embeddings.pt'))
