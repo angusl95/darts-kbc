@@ -134,7 +134,7 @@ class NetworkKBC(KBCModel):
     self._init_size = init_size
     self._interleaved = interleaved
     self.embeddings = nn.ModuleList([
-            nn.Embedding(s, emb_dim, sparse=False)#True)
+            nn.Embedding(s, emb_dim, max_norm=1,sparse=False)#True)
             for s in sizes[:2]
         ])
     self.embeddings[0].weight.data *= init_size
