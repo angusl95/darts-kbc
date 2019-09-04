@@ -189,6 +189,7 @@ class Network(KBCModel):
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
+    return out
 
 
   def score(self, x):

@@ -175,6 +175,7 @@ class NetworkKBC(KBCModel):
     out = self.output_drop(out)
     out = self.output_bn(out)
     out = F.relu(out)
+    return out
 
   def score(self, x):
     lhs = self.embeddings[0](x[:, 0])
